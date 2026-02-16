@@ -1,0 +1,38 @@
+export type Role = 'admin' | 'member' | 'guest';
+
+export interface User {
+  id: string;
+  firstName: string;
+  surnames: [string, string, string, string]; // 4 surnames
+  birthDate: string;
+  parentsNames: string;
+  email: string;
+  password?: string; // In a real app, this is hashed. Here simplistic.
+  personalInfo?: string; // New field for bio/personal info
+  photoUrl?: string; // Base64 string for profile picture
+  role: Role;
+  status: 'active' | 'pending_approval' | 'rejected';
+  registeredAt: string;
+}
+
+export interface Notice {
+  id: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  content: string;
+  imageUrl?: string; // Base64 string for notice image
+  type: 'general' | 'offer' | 'event';
+  date: string;
+}
+
+export interface FamilyHistory {
+  content: string;
+  images?: string[]; // Array of Base64 strings for history gallery
+  lastUpdated: string;
+  updatedBy: string;
+}
+
+export interface GeneanetConfig {
+  url: string;
+}

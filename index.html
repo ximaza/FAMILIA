@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAMILIA MAZARRASA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              family: {
+                50: '#fbf8f3',
+                100: '#f5efe4',
+                200: '#e9dbc3',
+                300: '#dbc09b',
+                400: '#ca9e6e',
+                500: '#bf834a',
+                600: '#b16a3c',
+                700: '#935432',
+                800: '#794530',
+                900: '#623a29',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-family-50 text-slate-800">
+    <div id="root"></div>
+  </body>
+</html>
