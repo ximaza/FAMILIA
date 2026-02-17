@@ -95,19 +95,19 @@ export const Notices: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-serif font-bold text-family-900">Tablón de Avisos</h2>
+        <h2 className="text-3xl font-serif font-bold text-family-900">Comunicaciones</h2>
         <button 
           onClick={() => setShowForm(!showForm)}
           className="bg-family-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-family-700 transition"
         >
           {showForm ? <X size={18} /> : <Plus size={18} />}
-          <span>{showForm ? 'Cancelar' : 'Nuevo Aviso'}</span>
+          <span>{showForm ? 'Cancelar' : 'Nueva Comunicación'}</span>
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-family-200 mb-8 animate-fade-in">
-          <h3 className="text-lg font-bold mb-4 text-family-800">Publicar nuevo aviso</h3>
+          <h3 className="text-lg font-bold mb-4 text-family-800">Publicar nueva comunicación</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-2">
@@ -235,7 +235,7 @@ export const Notices: React.FC = () => {
         {notices.length === 0 && (
             <div className="text-center py-12 text-slate-400 bg-white rounded-xl border border-dashed border-slate-300">
                 <Tag size={48} className="mx-auto mb-2 opacity-20" />
-                <p>No hay avisos publicados aún.</p>
+                <p>No hay comunicaciones publicadas aún.</p>
             </div>
         )}
       </div>

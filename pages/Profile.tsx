@@ -211,7 +211,7 @@ export const Profile: React.FC = () => {
                     <label className="text-sm font-bold text-family-800 uppercase block mb-2 flex items-center gap-2">
                         <Edit3 size={16} /> Información Personal / Biografía
                     </label>
-                    <p className="text-xs text-slate-500 mb-2">Añade información sobre ti, tu profesión, hobbies o familia actual que quieras compartir con el resto de adheridos.</p>
+                    <p className="text-xs text-slate-500 mb-2">Añade información sobre ti, tu profesión, hobbies o familia actual que quieras compartir con el resto de la Family.</p>
                     {isEditing ? (
                         <textarea 
                             rows={6}

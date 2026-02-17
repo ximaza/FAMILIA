@@ -37,9 +37,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             <div className="p-3 bg-family-100 text-family-700 rounded-lg group-hover:bg-family-700 group-hover:text-white transition">
               <Bell size={24} />
             </div>
-            <h3 className="text-xl font-semibold text-family-900">Tablón de Avisos</h3>
+            <h3 className="text-xl font-semibold text-family-900">Comunicaciones</h3>
           </div>
-          <p className="text-slate-600 text-sm">Hay {notices.length} avisos publicados. Mantente informado de eventos y noticias.</p>
+          <p className="text-slate-600 text-sm">Hay {notices.length} comunicaciones publicadas. Mantente informado de eventos y noticias.</p>
         </div>
 
         <div 
@@ -60,9 +60,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
       </div>
 
       <div className="mt-8">
-        <h3 className="text-2xl font-serif font-bold text-family-800 mb-4">Avisos Recientes</h3>
+        <h3 className="text-2xl font-serif font-bold text-family-800 mb-4">Comunicaciones Recientes</h3>
         {recentNotices.length === 0 ? (
-          <p className="text-slate-500 italic">No hay avisos recientes.</p>
+          <p className="text-slate-500 italic">No hay comunicaciones recientes.</p>
         ) : (
           <div className="space-y-4">
             {recentNotices.map(notice => (

@@ -14,13 +14,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
   const { currentUser, logout } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  // New Order: INICIO, HISTORIA FAMILIAR, ADHERIDOS, ARBOL GENEALOGICO, TABLON DE AVISOS, ADMIN
+  // New Order: INICIO, HISTORIA FAMILIAR, FAMILY, ARBOL GENEALOGICO, COMUNICACIONES, ADMIN
   const navItems = [
     { id: 'dashboard', label: 'Inicio', icon: <Home size={20} /> },
     { id: 'history', label: 'Historia Familiar', icon: <BookOpen size={20} /> },
-    { id: 'members', label: 'Adheridos', icon: <Users size={20} /> },
+    { id: 'members', label: 'Family', icon: <Users size={20} /> },
     { id: 'genealogy', label: 'Árbol Genealógico', icon: <TreeDeciduous size={20} /> },
-    { id: 'notices', label: 'Tablón de Avisos', icon: <Bell size={20} /> },
+    { id: 'notices', label: 'Comunicaciones', icon: <Bell size={20} /> },
   ];
 
   if (currentUser?.role === 'admin') {

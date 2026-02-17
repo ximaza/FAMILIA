@@ -101,7 +101,7 @@ export const Members: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 border-b border-family-200 pb-4">
         <div>
-            <h2 className="text-3xl font-serif font-bold text-family-900">Adheridos</h2>
+            <h2 className="text-3xl font-serif font-bold text-family-900">Family</h2>
             <p className="text-family-600 mt-1">Listado de miembros activos de la familia.</p>
         </div>
       </div>
