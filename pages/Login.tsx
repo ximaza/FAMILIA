@@ -75,6 +75,21 @@ export const Login: React.FC = () => {
     };
 
     await register(newUser);
+    
+    // Send welcome email
+    try {
+        await fetch('/api/send-welcome-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: newUser.email, 
+                name: newUser.firstName 
+            })
+        });
+    } catch (error) {
+        console.error("Error calling email API:", error);
+    }
+
     alert('Registro completado. Su cuenta está pendiente de aprobación por un administrador.');
     setIsRegistering(false);
     setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
@@ -87,7 +102,6 @@ export const Login: React.FC = () => {
             <BookOpen size={40} />
         </div>
         <h1 className="text-3xl font-serif font-bold text-family-900 uppercase tracking-wide">FAMILIA MAZARRASA</h1>
-        <p className="text-family-600 mt-2">Coordinadora Familiar</p>
       </div>
 
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-family-200">

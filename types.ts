@@ -36,3 +36,11 @@ export interface FamilyHistory {
 export interface GeneanetConfig {
   url: string;
 }
+
+export interface HomePageContent {
+  welcomeMessage: string;
+  mainTitle: string;
+  bodyContent: string;
+  imageUrl?: string;
+  lastUpdated: string;
+}

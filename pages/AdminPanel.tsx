@@ -21,6 +21,18 @@ export const AdminPanel: React.FC = () => {
         status: action === 'approve' ? 'active' : 'rejected' 
     };
     storage.updateUser(updatedUser);
+
+    // Send approval email if approved
+    if (action === 'approve') {
+        fetch('/api/send-approval-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: user.email, 
+                name: user.firstName 
+            })
+        }).catch(err => console.error("Error sending approval email:", err));
+    }
     
     // Refresh local list
     setUsers(storage.getUsers());

@@ -3,6 +3,7 @@ import { User, Notice, FamilyHistory } from '../types';
 const USERS_KEY = 'maz_users';
 const NOTICES_KEY = 'maz_notices';
 const HISTORY_KEY = 'maz_history';
+const HOME_PAGE_KEY = 'maz_home_page';
 const CURRENT_USER_KEY = 'maz_current_user_id';
 
 // Initial Seed Data - Updated to Joaquín Mazarrasa Coll
@@ -23,6 +24,13 @@ const seedHistory: FamilyHistory = {
   content: "La familia MAZ tiene sus orígenes en el siglo XIX...",
   lastUpdated: new Date().toISOString(),
   updatedBy: 'Joaquín'
+};
+
+const seedHomePage: any = {
+  welcomeMessage: "Bienvenido/a",
+  mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
+  bodyContent: "",
+  lastUpdated: new Date().toISOString()
 };
 
 const initializeStorage = () => {
@@ -46,6 +54,11 @@ const initializeStorage = () => {
   // Handle Notices
   if (!localStorage.getItem(NOTICES_KEY)) {
     localStorage.setItem(NOTICES_KEY, JSON.stringify([]));
+  }
+
+  // Handle Home Page
+  if (!localStorage.getItem(HOME_PAGE_KEY)) {
+    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(seedHomePage));
   }
 };
 
@@ -82,6 +95,12 @@ export const storage = {
   
   saveHistory: (history: FamilyHistory) => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  },
+
+  getHomePage: () => JSON.parse(localStorage.getItem(HOME_PAGE_KEY) || JSON.stringify(seedHomePage)),
+  
+  saveHomePage: (content: any) => {
+    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(content));
   },
 
   login: (email: string, password: string): User | undefined => {

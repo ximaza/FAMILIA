@@ -1,88 +1,154 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
-import { Users, Bell, TreeDeciduous, UserCircle } from 'lucide-react';
+import { Edit2, Save, X, Image as ImageIcon } from 'lucide-react';
+import { HomePageContent } from '../types';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
-  const notices = storage.getNotices();
-  const recentNotices = notices.slice(0, 3);
+  const [content, setContent] = useState<HomePageContent>(storage.getHomePage());
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<HomePageContent>(content);
+
+  const isAdmin = currentUser?.role === 'admin';
+
+  const handleSave = () => {
+    const updatedContent = {
+      ...editForm,
+      lastUpdated: new Date().toISOString()
+    };
+    storage.saveHomePage(updatedContent);
+    setContent(updatedContent);
+    setIsEditing(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditForm({ ...editForm, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <header className="mb-8">
-        <h2 className="text-3xl font-serif font-bold text-family-900">Bienvenido, {currentUser?.firstName}</h2>
-        <p className="text-family-600 mt-2">Panel de coordinación de la Familia MAZ</p>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div 
-            onClick={() => onNavigate('genealogy')}
-            className="bg-white p-6 rounded-xl shadow-sm border border-family-200 hover:shadow-md transition cursor-pointer group"
+    <div className="space-y-6 relative">
+      {isAdmin && !isEditing && (
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="absolute top-0 right-0 p-2 bg-turquoise-100 text-turquoise-700 rounded-full hover:bg-turquoise-200 transition shadow-sm"
+          title="Editar página de inicio"
         >
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-family-100 text-family-700 rounded-lg group-hover:bg-family-700 group-hover:text-white transition">
-              <TreeDeciduous size={24} />
-            </div>
-            <h3 className="text-xl font-semibold text-family-900">Árbol Genealógico</h3>
-          </div>
-          <p className="text-slate-600 text-sm">Explora tus raíces y conecta con antepasados en Geneanet.</p>
-        </div>
+          <Edit2 size={20} />
+        </button>
+      )}
 
-        <div 
-            onClick={() => onNavigate('notices')}
-            className="bg-white p-6 rounded-xl shadow-sm border border-family-200 hover:shadow-md transition cursor-pointer group"
-        >
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-family-100 text-family-700 rounded-lg group-hover:bg-family-700 group-hover:text-white transition">
-              <Bell size={24} />
+      {isEditing ? (
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-turquoise-200 space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+            <h3 className="text-xl font-bold text-slate-800">Editar Página de Inicio</h3>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setIsEditing(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 transition"
+              >
+                <X size={24} />
+              </button>
+              <button 
+                onClick={handleSave}
+                className="flex items-center gap-2 bg-turquoise-600 text-white px-4 py-2 rounded-lg hover:bg-turquoise-700 transition shadow-md"
+              >
+                <Save size={18} />
+                <span>Guardar Cambios</span>
+              </button>
             </div>
-            <h3 className="text-xl font-semibold text-family-900">Comunicaciones</h3>
           </div>
-          <p className="text-slate-600 text-sm">Hay {notices.length} comunicaciones publicadas. Mantente informado de eventos y noticias.</p>
-        </div>
 
-        <div 
-          onClick={() => onNavigate('profile')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-family-200 hover:shadow-md transition cursor-pointer group"
-        >
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-family-100 text-family-700 rounded-lg group-hover:bg-family-700 group-hover:text-white transition">
-              <UserCircle size={24} />
-            </div>
-            <h3 className="text-xl font-semibold text-family-900">Mi Perfil</h3>
-          </div>
-          <div className="text-sm text-slate-600 space-y-1">
-            <p className="truncate"><strong>Apellidos:</strong> {currentUser?.surnames.join(' ')}</p>
-            <p className="text-family-600 mt-2 text-xs font-bold uppercase">Ver / Editar datos</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <h3 className="text-2xl font-serif font-bold text-family-800 mb-4">Comunicaciones Recientes</h3>
-        {recentNotices.length === 0 ? (
-          <p className="text-slate-500 italic">No hay comunicaciones recientes.</p>
-        ) : (
           <div className="space-y-4">
-            {recentNotices.map(notice => (
-              <div key={notice.id} className="bg-white p-5 rounded-lg border-l-4 border-family-500 shadow-sm">
-                 <div className="flex justify-between items-start">
-                    <h4 className="font-bold text-lg text-slate-800">{notice.title}</h4>
-                    <span className="text-xs text-slate-400">{new Date(notice.date).toLocaleDateString()}</span>
-                 </div>
-                 <p className="text-slate-600 mt-2 line-clamp-2">{notice.content}</p>
-                 <button 
-                    onClick={() => onNavigate('notices')}
-                    className="text-family-600 text-sm font-medium mt-2 hover:underline"
-                 >
-                    Leer más
-                 </button>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mensaje de Bienvenida</label>
+              <input 
+                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-turquoise-500 outline-none"
+                value={editForm.welcomeMessage}
+                onChange={e => setEditForm({...editForm, welcomeMessage: e.target.value})}
+                placeholder="Ej: Bienvenido/a"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Título Principal</label>
+              <input 
+                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-turquoise-500 outline-none font-serif"
+                value={editForm.mainTitle}
+                onChange={e => setEditForm({...editForm, mainTitle: e.target.value})}
+                placeholder="Ej: AL ENCUENTRO DE LOS MAZARRASA"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Contenido de la Página (Opcional)</label>
+              <textarea 
+                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-turquoise-500 outline-none min-h-[150px]"
+                value={editForm.bodyContent}
+                onChange={e => setEditForm({...editForm, bodyContent: e.target.value})}
+                placeholder="Escribe aquí el texto que desees mostrar..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Imagen Destacada (Opcional)</label>
+              <div className="mt-2 flex items-center gap-4">
+                {editForm.imageUrl && (
+                  <img src={editForm.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                )}
+                <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-turquoise-400 hover:bg-turquoise-50 transition">
+                  <ImageIcon className="text-slate-400" size={24} />
+                  <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                </label>
+                {editForm.imageUrl && (
+                  <button 
+                    onClick={() => setEditForm({...editForm, imageUrl: undefined})}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Eliminar imagen
+                  </button>
+                )}
               </div>
-            ))}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          <header className="mb-8 text-center py-12">
+            <h2 className="text-4xl md:text-5xl font-serif font-black text-black tracking-tight mb-4">
+              {content.welcomeMessage}, {currentUser?.firstName}
+            </h2>
+            <h2 className="text-4xl md:text-5xl font-serif font-black text-turquoise-700 tracking-tight">
+              {content.mainTitle}
+            </h2>
+          </header>
+
+          <div className="max-w-3xl mx-auto space-y-8">
+            {content.imageUrl && (
+              <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+                <img src={content.imageUrl} alt="Familia Mazarrasa" className="w-full h-auto" />
+              </div>
+            )}
+            
+            {content.bodyContent && (
+              <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed text-center whitespace-pre-wrap font-serif italic">
+                {content.bodyContent}
+              </div>
+            )}
+
+            {!content.imageUrl && !content.bodyContent && (
+              <div className="min-h-[200px] flex items-center justify-center">
+                {/* Espacio reservado para futura imagen o texto */}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
