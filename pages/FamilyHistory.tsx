@@ -13,13 +13,16 @@ export const FamilyHistory: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const data = storage.getHistory();
-    setHistory(data);
-    setEditContent(data.content);
-    setEditImages(data.images || []);
+    const fetchHistory = async () => {
+      const data = await storage.getHistory();
+      setHistory(data);
+      setEditContent(data.content);
+      setEditImages(data.images || []);
+    };
+    fetchHistory();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser) return;
     const newHistory: FamilyHistoryType = {
         content: editContent,
@@ -27,7 +30,7 @@ export const FamilyHistory: React.FC = () => {
         lastUpdated: new Date().toISOString(),
         updatedBy: currentUser.firstName
     };
-    storage.saveHistory(newHistory);
+    await storage.saveHistory(newHistory);
     setHistory(newHistory);
     setIsEditing(false);
   };
@@ -53,7 +56,7 @@ export const FamilyHistory: React.FC = () => {
       setEditImages(newImages);
   };
 
-  if (!history) return <div>Cargando...</div>;
+  if (!history) return <div className="p-8 text-center text-slate-500">Cargando...</div>;
 
   return (
     <div className="max-w-4xl mx-auto">
