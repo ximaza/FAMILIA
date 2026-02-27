@@ -5,11 +5,32 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
+import admin from "firebase-admin";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase
+let db: admin.firestore.Firestore | null = null;
+try {
+  if (process.env.FIREBASE_PROJECT_ID) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+    db = admin.firestore();
+    console.log("Firebase initialized successfully");
+  } else {
+    console.warn("Firebase credentials missing. Falling back to local JSON storage.");
+  }
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
+}
 
 async function startServer() {
   const app = express();
@@ -51,68 +72,123 @@ async function startServer() {
 
   // API Routes
   app.get("/api/users", async (req, res) => {
-    const users = await readData("users.json");
-    res.json(users || []);
+    if (db) {
+      const snapshot = await db.collection("users").get();
+      const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json(users);
+    } else {
+      const users = await readData("users.json");
+      res.json(users || []);
+    }
   });
 
   app.post("/api/users", async (req, res) => {
     const newUser = req.body;
-    const users = (await readData("users.json")) || [];
-    users.push(newUser);
-    await writeData("users.json", users);
-    res.json(newUser);
+    if (db) {
+      const { id, ...data } = newUser;
+      await db.collection("users").doc(id).set(data);
+      res.json(newUser);
+    } else {
+      const users = (await readData("users.json")) || [];
+      users.push(newUser);
+      await writeData("users.json", users);
+      res.json(newUser);
+    }
   });
 
   app.put("/api/users/:id", async (req, res) => {
     const { id } = req.params;
     const updatedUser = req.body;
-    let users = (await readData("users.json")) || [];
-    users = users.map((u: any) => u.id === id ? updatedUser : u);
-    await writeData("users.json", users);
-    res.json(updatedUser);
+    if (db) {
+      const { id: _, ...data } = updatedUser;
+      await db.collection("users").doc(id).set(data, { merge: true });
+      res.json(updatedUser);
+    } else {
+      let users = (await readData("users.json")) || [];
+      users = users.map((u: any) => u.id === id ? updatedUser : u);
+      await writeData("users.json", users);
+      res.json(updatedUser);
+    }
   });
 
   app.delete("/api/users/:id", async (req, res) => {
     const { id } = req.params;
-    let users = (await readData("users.json")) || [];
-    users = users.filter((u: any) => u.id !== id);
-    await writeData("users.json", users);
-    res.json({ success: true });
+    if (db) {
+      await db.collection("users").doc(id).delete();
+      res.json({ success: true });
+    } else {
+      let users = (await readData("users.json")) || [];
+      users = users.filter((u: any) => u.id !== id);
+      await writeData("users.json", users);
+      res.json({ success: true });
+    }
   });
 
   app.get("/api/notices", async (req, res) => {
-    const notices = await readData("notices.json");
-    res.json(notices || []);
+    if (db) {
+      const snapshot = await db.collection("notices").orderBy("date", "desc").get();
+      const notices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json(notices);
+    } else {
+      const notices = await readData("notices.json");
+      res.json(notices || []);
+    }
   });
 
   app.post("/api/notices", async (req, res) => {
     const newNotice = req.body;
-    const notices = (await readData("notices.json")) || [];
-    notices.unshift(newNotice);
-    await writeData("notices.json", notices);
-    res.json(newNotice);
+    if (db) {
+      const { id, ...data } = newNotice;
+      await db.collection("notices").doc(id).set(data);
+      res.json(newNotice);
+    } else {
+      const notices = (await readData("notices.json")) || [];
+      notices.unshift(newNotice);
+      await writeData("notices.json", notices);
+      res.json(newNotice);
+    }
   });
 
   app.get("/api/history", async (req, res) => {
-    const history = await readData("history.json");
-    res.json(history);
+    if (db) {
+      const doc = await db.collection("config").doc("history").get();
+      res.json(doc.exists ? doc.data() : null);
+    } else {
+      const history = await readData("history.json");
+      res.json(history);
+    }
   });
 
   app.post("/api/history", async (req, res) => {
     const history = req.body;
-    await writeData("history.json", history);
-    res.json(history);
+    if (db) {
+      await db.collection("config").doc("history").set(history);
+      res.json(history);
+    } else {
+      await writeData("history.json", history);
+      res.json(history);
+    }
   });
 
   app.get("/api/homepage", async (req, res) => {
-    const homepage = await readData("homepage.json");
-    res.json(homepage);
+    if (db) {
+      const doc = await db.collection("config").doc("homepage").get();
+      res.json(doc.exists ? doc.data() : null);
+    } else {
+      const homepage = await readData("homepage.json");
+      res.json(homepage);
+    }
   });
 
   app.post("/api/homepage", async (req, res) => {
     const homepage = req.body;
-    await writeData("homepage.json", homepage);
-    res.json(homepage);
+    if (db) {
+      await db.collection("config").doc("homepage").set(homepage);
+      res.json(homepage);
+    } else {
+      await writeData("homepage.json", homepage);
+      res.json(homepage);
+    }
   });
 
   app.post("/api/send-welcome-email", async (req, res) => {
