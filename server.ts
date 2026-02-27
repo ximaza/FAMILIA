@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises";
 
 dotenv.config();
 
@@ -16,16 +17,104 @@ async function startServer() {
 
   // Helper to get clean credentials
   const getEmailConfig = () => {
-    // Hardcoding the values provided to ensure they are used exactly
-    const user = "camaraberango@gmail.com";
-    const pass = "nwnnoladpaxqqqid"; // Removed spaces for maximum compatibility
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
     
     return { user, pass };
   };
 
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
+
+  const DATA_DIR = path.join(__dirname, "data");
+
+  const readData = async (filename: string) => {
+    const filePath = path.join(DATA_DIR, filename);
+    try {
+      const data = await fs.readFile(filePath, "utf-8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.error(`Error reading ${filename}:`, error);
+      return null;
+    }
+  };
+
+  const writeData = async (filename: string, data: any) => {
+    const filePath = path.join(DATA_DIR, filename);
+    try {
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+      return true;
+    } catch (error) {
+      console.error(`Error writing ${filename}:`, error);
+      return false;
+    }
+  };
 
   // API Routes
+  app.get("/api/users", async (req, res) => {
+    const users = await readData("users.json");
+    res.json(users || []);
+  });
+
+  app.post("/api/users", async (req, res) => {
+    const newUser = req.body;
+    const users = (await readData("users.json")) || [];
+    users.push(newUser);
+    await writeData("users.json", users);
+    res.json(newUser);
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    const updatedUser = req.body;
+    let users = (await readData("users.json")) || [];
+    users = users.map((u: any) => u.id === id ? updatedUser : u);
+    await writeData("users.json", users);
+    res.json(updatedUser);
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    let users = (await readData("users.json")) || [];
+    users = users.filter((u: any) => u.id !== id);
+    await writeData("users.json", users);
+    res.json({ success: true });
+  });
+
+  app.get("/api/notices", async (req, res) => {
+    const notices = await readData("notices.json");
+    res.json(notices || []);
+  });
+
+  app.post("/api/notices", async (req, res) => {
+    const newNotice = req.body;
+    const notices = (await readData("notices.json")) || [];
+    notices.unshift(newNotice);
+    await writeData("notices.json", notices);
+    res.json(newNotice);
+  });
+
+  app.get("/api/history", async (req, res) => {
+    const history = await readData("history.json");
+    res.json(history);
+  });
+
+  app.post("/api/history", async (req, res) => {
+    const history = req.body;
+    await writeData("history.json", history);
+    res.json(history);
+  });
+
+  app.get("/api/homepage", async (req, res) => {
+    const homepage = await readData("homepage.json");
+    res.json(homepage);
+  });
+
+  app.post("/api/homepage", async (req, res) => {
+    const homepage = req.body;
+    await writeData("homepage.json", homepage);
+    res.json(homepage);
+  });
+
   app.post("/api/send-welcome-email", async (req, res) => {
     const { email, name } = req.body;
     const config = getEmailConfig();
