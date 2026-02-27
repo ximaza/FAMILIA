@@ -16,7 +16,7 @@ export const Profile: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser || !formData.id) return;
     
     const updatedUser: User = {
@@ -30,8 +30,8 @@ export const Profile: React.FC = () => {
         photoUrl: formData.photoUrl || currentUser.photoUrl
     };
 
-    storage.updateUser(updatedUser);
-    refreshUser(); 
+    await storage.updateUser(updatedUser);
+    await refreshUser();
     setIsEditing(false);
     alert('Perfil actualizado correctamente.');
   };
@@ -59,12 +59,12 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
       if (!currentUser) return;
       
       const confirmText = `¿Estás completamente seguro de que deseas eliminar tu cuenta? Esta acción borrará tus datos y perderás el acceso.`;
       if (window.confirm(confirmText)) {
-          storage.deleteUser(currentUser.id);
+          await storage.deleteUser(currentUser.id);
           logout();
           alert("Tu cuenta ha sido eliminada.");
       }

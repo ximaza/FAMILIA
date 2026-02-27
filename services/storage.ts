@@ -1,10 +1,23 @@
-import { User, Notice, FamilyHistory } from '../types';
+import { User, Notice, FamilyHistory, HomePageContent } from '../types';
+import { db } from './firebase';
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  getDoc,
+  orderBy,
+  limit
+} from 'firebase/firestore';
 
-const USERS_KEY = 'maz_users';
-const NOTICES_KEY = 'maz_notices';
-const HISTORY_KEY = 'maz_history';
-const HOME_PAGE_KEY = 'maz_home_page';
-const CURRENT_USER_KEY = 'maz_current_user_id';
+const USERS_COLLECTION = 'users';
+const NOTICES_COLLECTION = 'notices';
+const HISTORY_COLLECTION = 'history';
+const HOMEPAGE_COLLECTION = 'homePage';
 
 // Initial Seed Data - Updated to Joaquín Mazarrasa Coll
 const seedAdmin: User = {
@@ -26,88 +39,127 @@ const seedHistory: FamilyHistory = {
   updatedBy: 'Joaquín'
 };
 
-const seedHomePage: any = {
+const seedHomePage: HomePageContent = {
   welcomeMessage: "Bienvenido/a",
   mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
   bodyContent: "",
   lastUpdated: new Date().toISOString()
 };
 
-const initializeStorage = () => {
-  // Handle Users
-  let users: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  
-  // Force update or add the seed admin (Joaquín) to replace the old default admin
-  const adminIndex = users.findIndex(u => u.id === seedAdmin.id);
-  if (adminIndex !== -1) {
-    users[adminIndex] = seedAdmin; // Overwrite existing admin
-  } else {
-    users.push(seedAdmin); // Add if not exists
-  }
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+const initializeStorage = async () => {
+  // Check if admin exists
+  const usersRef = collection(db, USERS_COLLECTION);
+  const q = query(usersRef, where("role", "==", "admin"));
+  const querySnapshot = await getDocs(q);
 
-  // Handle History
-  if (!localStorage.getItem(HISTORY_KEY)) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(seedHistory));
-  }
+  if (querySnapshot.empty) {
+    // Check if we need to migrate from local storage or just seed
+    const localUsers = localStorage.getItem('maz_users');
+    if (localUsers) {
+       // Migration could happen here, but for now let's just ensure the seed admin exists
+       // if we are starting fresh with Firebase
+    }
 
-  // Handle Notices
-  if (!localStorage.getItem(NOTICES_KEY)) {
-    localStorage.setItem(NOTICES_KEY, JSON.stringify([]));
+    // Create seed admin
+    await setDoc(doc(db, USERS_COLLECTION, seedAdmin.id), seedAdmin);
+    console.log("Seed admin created in Firestore");
   }
 
-  // Handle Home Page
-  if (!localStorage.getItem(HOME_PAGE_KEY)) {
-    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(seedHomePage));
+  // Initialize History if not exists
+  const historyRef = doc(db, HISTORY_COLLECTION, 'main');
+  const historySnap = await getDoc(historyRef);
+  if (!historySnap.exists()) {
+    await setDoc(historyRef, seedHistory);
+  }
+
+  // Initialize Home Page if not exists
+  const homePageRef = doc(db, HOMEPAGE_COLLECTION, 'main');
+  const homePageSnap = await getDoc(homePageRef);
+  if (!homePageSnap.exists()) {
+    await setDoc(homePageRef, seedHomePage);
   }
 };
 
-initializeStorage();
+// Start initialization
+initializeStorage().catch(console.error);
 
 export const storage = {
-  getUsers: (): User[] => JSON.parse(localStorage.getItem(USERS_KEY) || '[]'),
+  getUsers: async (): Promise<User[]> => {
+    const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
+    return querySnapshot.docs.map(doc => doc.data() as User);
+  },
   
-  saveUser: (user: User) => {
-    const users = storage.getUsers();
-    users.push(user);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  saveUser: async (user: User): Promise<void> => {
+    await setDoc(doc(db, USERS_COLLECTION, user.id), user);
   },
 
-  updateUser: (updatedUser: User) => {
-    const users = storage.getUsers().map(u => u.id === updatedUser.id ? updatedUser : u);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  updateUser: async (updatedUser: User): Promise<void> => {
+    await updateDoc(doc(db, USERS_COLLECTION, updatedUser.id), { ...updatedUser });
   },
 
-  deleteUser: (userId: string) => {
-    const users = storage.getUsers().filter(u => u.id !== userId);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  deleteUser: async (userId: string): Promise<void> => {
+    await deleteDoc(doc(db, USERS_COLLECTION, userId));
   },
 
-  getNotices: (): Notice[] => JSON.parse(localStorage.getItem(NOTICES_KEY) || '[]'),
+  getUserById: async (userId: string): Promise<User | undefined> => {
+    const docRef = doc(db, USERS_COLLECTION, userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as User;
+    }
+    return undefined;
+  },
+
+  getNotices: async (): Promise<Notice[]> => {
+    const q = query(collection(db, NOTICES_COLLECTION), orderBy('date', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => doc.data() as Notice);
+  },
   
-  addNotice: (notice: Notice) => {
-    const notices = storage.getNotices();
-    notices.unshift(notice); // Newest first
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(notices));
+  addNotice: async (notice: Notice): Promise<void> => {
+    await setDoc(doc(db, NOTICES_COLLECTION, notice.id), notice);
   },
 
-  getHistory: (): FamilyHistory => JSON.parse(localStorage.getItem(HISTORY_KEY) || JSON.stringify(seedHistory)),
+  getHistory: async (): Promise<FamilyHistory> => {
+    const docRef = doc(db, HISTORY_COLLECTION, 'main');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as FamilyHistory;
+    }
+    return seedHistory;
+  },
   
-  saveHistory: (history: FamilyHistory) => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  saveHistory: async (history: FamilyHistory): Promise<void> => {
+    await setDoc(doc(db, HISTORY_COLLECTION, 'main'), history);
   },
 
-  getHomePage: () => JSON.parse(localStorage.getItem(HOME_PAGE_KEY) || JSON.stringify(seedHomePage)),
+  getHomePage: async (): Promise<HomePageContent> => {
+    const docRef = doc(db, HOMEPAGE_COLLECTION, 'main');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as HomePageContent;
+    }
+    return seedHomePage;
+  },
   
-  saveHomePage: (content: any) => {
-    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(content));
+  saveHomePage: async (content: HomePageContent): Promise<void> => {
+    await setDoc(doc(db, HOMEPAGE_COLLECTION, 'main'), content);
   },
 
-  login: (email: string, password: string): User | undefined => {
-    const users = storage.getUsers();
-    return users.find(u => 
-      u.email.toLowerCase() === email.toLowerCase() && 
-      u.password === password
-    );
+  login: async (email: string, password: string): Promise<User | undefined> => {
+    // In a real app, do not query by password. Use Firebase Auth or similar.
+    // For this migration, we query by email and then check password.
+    const q = query(collection(db, USERS_COLLECTION), where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        // Assuming email is unique, but let's find the match
+        const user = querySnapshot.docs.find(d => {
+            const u = d.data() as User;
+            return u.password === password;
+        });
+        return user ? (user.data() as User) : undefined;
+    }
+    return undefined;
   }
 };

@@ -9,10 +9,10 @@ export const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   
   useEffect(() => {
-    setUsers(storage.getUsers());
+    storage.getUsers().then(setUsers);
   }, []);
 
-  const handleAction = (userId: string, action: 'approve' | 'reject') => {
+  const handleAction = async (userId: string, action: 'approve' | 'reject') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
@@ -20,7 +20,7 @@ export const AdminPanel: React.FC = () => {
         ...user, 
         status: action === 'approve' ? 'active' : 'rejected' 
     };
-    storage.updateUser(updatedUser);
+    await storage.updateUser(updatedUser);
 
     // Send approval email if approved
     if (action === 'approve') {
@@ -35,21 +35,23 @@ export const AdminPanel: React.FC = () => {
     }
     
     // Refresh local list
-    setUsers(storage.getUsers());
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
-  const handleDelete = (userId: string, userName: string) => {
+  const handleDelete = async (userId: string, userName: string) => {
       if (userId === currentUser?.id) {
           alert("No puedes eliminar tu propia cuenta mientras estás conectado.");
           return;
       }
       if (window.confirm(`¿Estás seguro de que quieres ELIMINAR definitivamente a ${userName}? Esta acción no se puede deshacer.`)) {
-          storage.deleteUser(userId);
-          setUsers(storage.getUsers());
+          await storage.deleteUser(userId);
+          const updatedUsers = await storage.getUsers();
+          setUsers(updatedUsers);
       }
   };
 
-  const handleRoleChange = (userId: string, newRole: Role) => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     if (userId === currentUser?.id) {
         alert("No puedes modificar tu propio rol.");
         return;
@@ -65,8 +67,9 @@ export const AdminPanel: React.FC = () => {
     }
 
     const updatedUser: User = { ...user, role: newRole };
-    storage.updateUser(updatedUser);
-    setUsers(storage.getUsers());
+    await storage.updateUser(updatedUser);
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
   const pendingUsers = users.filter(u => u.status === 'pending_approval');
