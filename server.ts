@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises";
 
 dotenv.config();
 
@@ -23,9 +24,120 @@ async function startServer() {
     return { user, pass };
   };
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+
+  const DATA_DIR = path.join(__dirname, "data");
+  const USERS_FILE = path.join(DATA_DIR, "users.json");
+  const NOTICES_FILE = path.join(DATA_DIR, "notices.json");
+  const HISTORY_FILE = path.join(DATA_DIR, "history.json");
+  const HOMEPAGE_FILE = path.join(DATA_DIR, "homepage.json");
+
+  // Helper to read/write JSON files
+  async function readJSON(file: string) {
+    try {
+      const data = await fs.readFile(file, "utf-8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.error(`Error reading ${file}:`, error);
+      return null;
+    }
+  }
+
+  async function writeJSON(file: string, data: any) {
+    try {
+      await fs.writeFile(file, JSON.stringify(data, null, 2), "utf-8");
+      return true;
+    } catch (error) {
+      console.error(`Error writing ${file}:`, error);
+      return false;
+    }
+  }
 
   // API Routes
+  app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
+    console.log(`Login attempt for ${email}`);
+    const users = await readJSON(USERS_FILE) || [];
+    const user = users.find((u: any) =>
+      u.email.toLowerCase() === email.toLowerCase() &&
+      u.password === password
+    );
+
+    if (user) {
+      console.log(`Login successful for ${email}`);
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  });
+
+  app.get("/api/users", async (req, res) => {
+    const users = await readJSON(USERS_FILE);
+    const usersWithoutPasswords = (users || []).map(({ password, ...u }: any) => u);
+    res.json(usersWithoutPasswords);
+  });
+
+  app.post("/api/users", async (req, res) => {
+    const newUser = req.body;
+    const users = await readJSON(USERS_FILE) || [];
+    users.push(newUser);
+    await writeJSON(USERS_FILE, users);
+    res.json(newUser);
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    const updatedUser = req.body;
+    let users = await readJSON(USERS_FILE) || [];
+    users = users.map((u: any) => u.id === id ? updatedUser : u);
+    await writeJSON(USERS_FILE, users);
+    res.json(updatedUser);
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    let users = await readJSON(USERS_FILE) || [];
+    users = users.filter((u: any) => u.id !== id);
+    await writeJSON(USERS_FILE, users);
+    res.json({ success: true });
+  });
+
+  app.get("/api/notices", async (req, res) => {
+    const notices = await readJSON(NOTICES_FILE);
+    res.json(notices || []);
+  });
+
+  app.post("/api/notices", async (req, res) => {
+    const newNotice = req.body;
+    const notices = await readJSON(NOTICES_FILE) || [];
+    notices.unshift(newNotice);
+    await writeJSON(NOTICES_FILE, notices);
+    res.json(newNotice);
+  });
+
+  app.get("/api/history", async (req, res) => {
+    const history = await readJSON(HISTORY_FILE);
+    res.json(history);
+  });
+
+  app.post("/api/history", async (req, res) => {
+    const history = req.body;
+    await writeJSON(HISTORY_FILE, history);
+    res.json(history);
+  });
+
+  app.get("/api/homepage", async (req, res) => {
+    const homepage = await readJSON(HOMEPAGE_FILE);
+    res.json(homepage);
+  });
+
+  app.post("/api/homepage", async (req, res) => {
+    const homepage = req.body;
+    await writeJSON(HOMEPAGE_FILE, homepage);
+    res.json(homepage);
+  });
+
   app.post("/api/send-welcome-email", async (req, res) => {
     const { email, name } = req.body;
     const config = getEmailConfig();

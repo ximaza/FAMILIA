@@ -1,0 +1,87 @@
+[
+  {
+    "id": "admin-1",
+    "firstName": "Joaquín",
+    "surnames": [
+      "Mazarrasa",
+      "Coll",
+      "",
+      ""
+    ],
+    "birthDate": "1960-01-01",
+    "parentsNames": "Fundadores de la rama",
+    "email": "joaquin@maz.com",
+    "password": "admin123",
+    "role": "admin",
+    "status": "active",
+    "registeredAt": "2026-02-27T18:13:19Z"
+  },
+  {
+    "id": "1772216305076",
+    "firstName": "Test",
+    "surnames": [
+      "Pending",
+      "Mazarrasa",
+      "User",
+      "Alpha"
+    ],
+    "birthDate": "1990-01-01",
+    "parentsNames": "Parents",
+    "email": "test@pending.com",
+    "password": "pass123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-02-27T18:18:25.076Z"
+  },
+  {
+    "id": "1772216411089",
+    "firstName": "Test",
+    "surnames": [
+      "Pending",
+      "Mazarrasa",
+      "User",
+      "Alpha"
+    ],
+    "birthDate": "1990-01-01",
+    "parentsNames": "Parents",
+    "email": "test@pending.com",
+    "password": "pass123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-02-27T18:20:11.089Z"
+  },
+  {
+    "id": "1772216454389",
+    "firstName": "Test",
+    "surnames": [
+      "Pending",
+      "Mazarrasa",
+      "User",
+      "Alpha"
+    ],
+    "birthDate": "1990-01-01",
+    "parentsNames": "Parents",
+    "email": "test@pending.com",
+    "password": "pass123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-02-27T18:20:54.389Z"
+  },
+  {
+    "id": "1772216473788",
+    "firstName": "Test",
+    "surnames": [
+      "Pending",
+      "Mazarrasa",
+      "User",
+      "Alpha"
+    ],
+    "birthDate": "1990-01-01",
+    "parentsNames": "Parents",
+    "email": "test@pending.com",
+    "password": "pass123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-02-27T18:21:13.788Z"
+  }
+]

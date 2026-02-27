@@ -7,7 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (user: User) => Promise<void>;
   logout: () => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,39 +16,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check if user is persisted in session (simplified)
-    const storedId = localStorage.getItem('maz_current_user_id');
-    if (storedId) {
-      const users = storage.getUsers();
-      const user = users.find(u => u.id === storedId);
-      if (user) setCurrentUser(user);
-    }
+    const initializeAuth = async () => {
+      const storedId = localStorage.getItem('maz_current_user_id');
+      if (storedId) {
+        try {
+          const users = await storage.getUsers();
+          const user = users.find(u => u.id === storedId);
+          if (user) setCurrentUser(user);
+        } catch (error) {
+          console.error("Failed to initialize auth:", error);
+        }
+      }
+    };
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const user = storage.login(email, password);
-    if (user) {
-      if (user.status === 'rejected') {
-         alert('Su cuenta ha sido rechazada por el administrador.');
-         return false;
+    try {
+      const user = await storage.login(email, password);
+      if (user) {
+        if (user.status === 'rejected') {
+           alert('Su cuenta ha sido rechazada por el administrador.');
+           return false;
+        }
+        if (user.status === 'pending_approval') {
+           alert('Su cuenta está pendiente de aprobación por el administrador.');
+           return false;
+        }
+        setCurrentUser(user);
+        localStorage.setItem('maz_current_user_id', user.id);
+        return true;
       }
-      if (user.status === 'pending_approval') {
-         alert('Su cuenta está pendiente de aprobación por el administrador.');
-         return false;
-      }
-      setCurrentUser(user);
-      localStorage.setItem('maz_current_user_id', user.id);
-      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
     }
     return false;
   };
 
   const register = async (newUser: User) => {
-    storage.saveUser(newUser);
-    // Auto login is disabled because approval is needed, unless it's the first admin seed
-    if (newUser.role === 'admin') {
-        setCurrentUser(newUser);
-        localStorage.setItem('maz_current_user_id', newUser.id);
+    try {
+      await storage.saveUser(newUser);
+      if (newUser.role === 'admin') {
+          setCurrentUser(newUser);
+          localStorage.setItem('maz_current_user_id', newUser.id);
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
     }
   };
 
@@ -57,11 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('maz_current_user_id');
   };
 
-  const refreshUser = () => {
+  const refreshUser = async () => {
       if (currentUser) {
-          const users = storage.getUsers();
-          const refreshed = users.find(u => u.id === currentUser.id);
-          if (refreshed) setCurrentUser(refreshed);
+          try {
+            const users = await storage.getUsers();
+            const refreshed = users.find(u => u.id === currentUser.id);
+            if (refreshed) setCurrentUser(refreshed);
+          } catch (error) {
+            console.error("Failed to refresh user:", error);
+          }
       }
   };
 

@@ -9,9 +9,11 @@ export const Members: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
 
   useEffect(() => {
-    // Only show active members (approved)
-    const allUsers = storage.getUsers();
-    setMembers(allUsers.filter(u => u.status === 'active'));
+    const fetchMembers = async () => {
+      const allUsers = await storage.getUsers();
+      setMembers(allUsers.filter(u => u.status === 'active'));
+    };
+    fetchMembers();
   }, []);
 
   const filteredMembers = members.filter(user => {

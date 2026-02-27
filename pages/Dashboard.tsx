@@ -6,25 +6,35 @@ import { HomePageContent } from '../types';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
-  const [content, setContent] = useState<HomePageContent>(storage.getHomePage());
+  const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<HomePageContent>(content);
+  const [editForm, setEditForm] = useState<HomePageContent | null>(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      const data = await storage.getHomePage();
+      setContent(data);
+      setEditForm(data);
+    };
+    fetchContent();
+  }, []);
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!editForm) return;
     const updatedContent = {
       ...editForm,
       lastUpdated: new Date().toISOString()
     };
-    storage.saveHomePage(updatedContent);
+    await storage.saveHomePage(updatedContent);
     setContent(updatedContent);
     setIsEditing(false);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && editForm) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setEditForm({ ...editForm, imageUrl: reader.result as string });
@@ -32,6 +42,8 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
       reader.readAsDataURL(file);
     }
   };
+
+  if (!content || !editForm) return <div className="p-8 text-center text-slate-500">Cargando...</div>;
 
   return (
     <div className="space-y-6 relative">
