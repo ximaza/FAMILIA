@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Familia Mazarrasa</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 5px 10px; margin-right: 5px; cursor: pointer; }
+        .approve-btn { background-color: #4CAF50; color: white; border: none; }
+        .reject-btn { background-color: #f44336; color: white; border: none; }
+    </style>
+</head>
+<body>
+
+    <h2>Administración de Usuarios - Familia Mazarrasa</h2>
+    <p>Asegúrese de configurar sus credenciales de Firebase en el script.</p>
+
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los usuarios se cargarán aquí -->
+        </tbody>
+    </table>
+
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // TODO: Replace with your app's Firebase project configuration
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const tableBody = document.querySelector('#usersTable tbody');
+
+        async function loadUsers() {
+            tableBody.innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                tableBody.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                     tableBody.innerHTML = '<tr><td colspan="4">No hay usuarios registrados.</td></tr>';
+                     return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const user = docSnap.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.firstName || ''} ${user.surnames ? user.surnames.join(' ') : ''}</td>
+                        <td>${user.email || ''}</td>
+                        <td>${user.status || 'desconocido'}</td>
+                        <td>
+                            <button class="approve-btn" onclick="approveUser('${docSnap.id}')">Aprobar</button>
+                            <button class="reject-btn" onclick="rejectUser('${docSnap.id}')">Rechazar</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error cargando usuarios: ", error);
+                tableBody.innerHTML = '<tr><td colspan="4">Error al cargar datos. Compruebe la consola y la configuración.</td></tr>';
+            }
+        }
+
+        window.approveUser = async function(userId) {
+            if (confirm('¿Seguro que desea aprobar este usuario?')) {
+                try {
+                    const userRef = doc(db, "users", userId);
+                    await updateDoc(userRef, {
+                        status: "active"
+                    });
+                    alert('Usuario aprobado.');
+                    loadUsers();
+                } catch (error) {
+                    console.error("Error actualizando usuario:", error);
+                    alert("Error al aprobar.");
+                }
+            }
+        }
+
+        window.rejectUser = async function(userId) {
+            if (confirm('¿Seguro que desea rechazar y eliminar este usuario?')) {
+                try {
+                    const userRef = doc(db, "users", userId);
+                    await deleteDoc(userRef);
+                    alert('Usuario eliminado.');
+                    loadUsers();
+                } catch (error) {
+                    console.error("Error eliminando usuario:", error);
+                    alert("Error al rechazar.");
+                }
+            }
+        }
+
+        // Cargar usuarios al iniciar
+        loadUsers();
+    </script>
+</body>
+</html>
