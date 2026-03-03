@@ -13,13 +13,14 @@ export const FamilyHistory: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const data = storage.getHistory();
-    setHistory(data);
-    setEditContent(data.content);
-    setEditImages(data.images || []);
+    storage.getHistory().then(data => {
+      setHistory(data);
+      setEditContent(data.content);
+      setEditImages(data.images || []);
+    });
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser) return;
     const newHistory: FamilyHistoryType = {
         content: editContent,
@@ -27,7 +28,7 @@ export const FamilyHistory: React.FC = () => {
         lastUpdated: new Date().toISOString(),
         updatedBy: currentUser.firstName
     };
-    storage.saveHistory(newHistory);
+    await storage.saveHistory(newHistory);
     setHistory(newHistory);
     setIsEditing(false);
   };
@@ -56,54 +57,56 @@ export const FamilyHistory: React.FC = () => {
   if (!history) return <div>Cargando...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-end mb-8 border-b border-family-200 pb-4">
+    <div className="max-w-4xl mx-auto pt-4">
+      <div className="flex justify-between items-end mb-8 border-b border-brand-border/50 pb-4">
         <div>
-            <h2 className="text-4xl font-serif font-bold text-family-900">Historia Familiar</h2>
-            <p className="text-family-600 mt-2">Nuestras raíces, leyendas y memorias compartidas.</p>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-dark mb-1">Historia Familiar</h2>
+            <p className="text-sm md:text-base text-brand-accent">Nuestras raíces, leyendas y memorias compartidas.</p>
         </div>
         
         {currentUser?.role === 'admin' && !isEditing && (
             <button 
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 text-family-600 hover:text-family-800 font-medium"
+                className="flex items-center gap-2 text-brand-accent hover:text-brand-dark font-medium transition-colors"
             >
-                <Edit size={18} /> Editar
+                <Edit size={20} /> <span className="hidden md:inline">Editar</span>
             </button>
         )}
       </div>
 
       {isEditing ? (
-        <div className="bg-white p-6 rounded-xl shadow-lg animate-fade-in">
-            <div className="mb-6">
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Contenido de texto</h3>
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-card border border-brand-border/50 animate-fade-in">
+            <div className="mb-8">
+                <h3 className="text-xs font-bold text-brand-muted uppercase tracking-wide mb-3">Contenido de texto</h3>
                 <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full min-h-[300px] p-4 border border-slate-300 rounded-lg font-serif text-lg leading-relaxed focus:ring-2 focus:ring-family-400 outline-none"
+                    className="w-full min-h-[300px] p-5 bg-brand-light/30 border border-brand-border rounded-xl font-serif text-lg leading-relaxed focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all resize-y"
                 />
             </div>
             
-            <div className="mb-6">
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Galería de Imágenes</h3>
+            <div className="mb-8">
+                <h3 className="text-xs font-bold text-brand-muted uppercase tracking-wide mb-3">Galería de Imágenes</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     {editImages.map((img, idx) => (
-                        <div key={idx} className="relative group">
-                            <img src={img} className="w-full h-32 object-cover rounded-lg border border-slate-200" />
-                            <button 
-                                onClick={() => removeImage(idx)}
-                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
-                            >
-                                <Trash2 size={12} />
-                            </button>
+                        <div key={idx} className="relative group rounded-xl overflow-hidden shadow-sm border border-brand-border/50">
+                            <img src={img} className="w-full h-32 object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    onClick={() => removeImage(idx)}
+                                    className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-transform hover:scale-110 shadow-lg"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                     <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg text-slate-400 hover:bg-slate-50 hover:border-family-400 hover:text-family-500 transition cursor-pointer"
+                        className="w-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-brand-border rounded-xl text-brand-muted hover:bg-brand-light/50 hover:border-brand-accent hover:text-brand-accent transition-all cursor-pointer"
                     >
-                        <ImageIcon size={24} />
-                        <span className="text-xs mt-2">Añadir Foto</span>
+                        <ImageIcon size={28} className="mb-2" />
+                        <span className="text-xs font-medium uppercase tracking-wider">Añadir Foto</span>
                     </button>
                 </div>
                 <input 
@@ -115,45 +118,48 @@ export const FamilyHistory: React.FC = () => {
                 />
             </div>
 
-            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
+            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-brand-border/30">
                 <button 
                     onClick={() => {
                         setIsEditing(false);
                         setEditContent(history.content);
                         setEditImages(history.images || []);
                     }}
-                    className="px-4 py-2 text-slate-600 hover:text-slate-800 flex items-center gap-2"
+                    className="px-5 py-2.5 text-brand-muted font-bold hover:bg-brand-light rounded-xl transition-colors border border-transparent hover:border-brand-border flex items-center gap-2"
                 >
                     <X size={18} /> Cancelar
                 </button>
                 <button 
                     onClick={handleSave}
-                    className="px-6 py-2 bg-family-600 text-white rounded-lg hover:bg-family-700 flex items-center gap-2"
+                    className="px-6 py-2.5 bg-brand-accent text-white rounded-xl font-bold hover:bg-brand-dark flex items-center gap-2 shadow-md transition-all"
                 >
                     <Save size={18} /> Guardar Cambios
                 </button>
             </div>
         </div>
       ) : (
-        <article className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-family-100">
+        <article className="bg-white p-6 md:p-10 rounded-2xl shadow-card border border-brand-border/40">
             {/* Gallery Display */}
             {history.images && history.images.length > 0 && (
-                <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {history.images.map((img, idx) => (
-                        <div key={idx} className={`rounded-lg overflow-hidden shadow-md ${history.images && history.images.length === 1 ? 'col-span-2' : ''}`}>
-                            <img src={img} alt={`Historia ${idx}`} className="w-full h-64 md:h-80 object-cover hover:scale-105 transition duration-500" />
+                        <div key={idx} className={`rounded-2xl overflow-hidden shadow-md border border-brand-border/30 bg-brand-light/20 ${history.images && history.images.length === 1 ? 'col-span-full' : ''}`}>
+                            <img src={img} alt={`Historia ${idx}`} className="w-full h-64 md:h-96 object-cover hover:scale-105 transition duration-700 ease-out" />
                         </div>
                     ))}
                 </div>
             )}
 
-            <div className="prose prose-lg prose-stone max-w-none font-serif">
+            <div className="prose prose-lg max-w-none font-serif">
                 {history.content.split('\n').map((paragraph, idx) => (
-                    paragraph ? <p key={idx} className="mb-4 text-slate-700 leading-relaxed">{paragraph}</p> : <br key={idx} />
+                    paragraph ? <p key={idx} className="mb-5 text-brand-text/90 leading-relaxed text-[1.1rem] md:text-lg">{paragraph}</p> : <br key={idx} />
                 ))}
             </div>
-            <div className="mt-12 pt-6 border-t border-slate-100 text-xs text-slate-400 italic text-right">
-                Última actualización: {new Date(history.lastUpdated).toLocaleDateString()} por {history.updatedBy}
+
+            <div className="mt-12 pt-6 border-t border-brand-border/30 flex justify-end">
+                <p className="text-sm text-brand-muted/70 italic font-serif">
+                    Última actualización: {new Date(history.lastUpdated).toLocaleDateString()} por <span className="font-medium text-brand-muted">{history.updatedBy}</span>
+                </p>
             </div>
         </article>
       )}

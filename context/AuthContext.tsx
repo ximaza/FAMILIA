@@ -7,7 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (user: User) => Promise<void>;
   logout: () => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,14 +19,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check if user is persisted in session (simplified)
     const storedId = localStorage.getItem('maz_current_user_id');
     if (storedId) {
-      const users = storage.getUsers();
-      const user = users.find(u => u.id === storedId);
-      if (user) setCurrentUser(user);
+      storage.getUserById(storedId).then(user => {
+        if (user) setCurrentUser(user);
+      });
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const user = storage.login(email, password);
+    const user = await storage.login(email, password);
     if (user) {
       if (user.status === 'rejected') {
          alert('Su cuenta ha sido rechazada por el administrador.');
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (newUser: User) => {
-    storage.saveUser(newUser);
+    await storage.saveUser(newUser);
     // Auto login is disabled because approval is needed, unless it's the first admin seed
     if (newUser.role === 'admin') {
         setCurrentUser(newUser);
@@ -57,10 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('maz_current_user_id');
   };
 
-  const refreshUser = () => {
+  const refreshUser = async () => {
       if (currentUser) {
-          const users = storage.getUsers();
-          const refreshed = users.find(u => u.id === currentUser.id);
+          const refreshed = await storage.getUserById(currentUser.id);
           if (refreshed) setCurrentUser(refreshed);
       }
   };

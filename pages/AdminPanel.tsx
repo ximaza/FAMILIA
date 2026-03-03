@@ -9,10 +9,10 @@ export const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   
   useEffect(() => {
-    setUsers(storage.getUsers());
+    storage.getUsers().then(setUsers);
   }, []);
 
-  const handleAction = (userId: string, action: 'approve' | 'reject') => {
+  const handleAction = async (userId: string, action: 'approve' | 'reject') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
@@ -20,7 +20,7 @@ export const AdminPanel: React.FC = () => {
         ...user, 
         status: action === 'approve' ? 'active' : 'rejected' 
     };
-    storage.updateUser(updatedUser);
+    await storage.updateUser(updatedUser);
 
     // Send approval email if approved
     if (action === 'approve') {
@@ -35,21 +35,23 @@ export const AdminPanel: React.FC = () => {
     }
     
     // Refresh local list
-    setUsers(storage.getUsers());
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
-  const handleDelete = (userId: string, userName: string) => {
+  const handleDelete = async (userId: string, userName: string) => {
       if (userId === currentUser?.id) {
           alert("No puedes eliminar tu propia cuenta mientras estás conectado.");
           return;
       }
       if (window.confirm(`¿Estás seguro de que quieres ELIMINAR definitivamente a ${userName}? Esta acción no se puede deshacer.`)) {
-          storage.deleteUser(userId);
-          setUsers(storage.getUsers());
+          await storage.deleteUser(userId);
+          const updatedUsers = await storage.getUsers();
+          setUsers(updatedUsers);
       }
   };
 
-  const handleRoleChange = (userId: string, newRole: Role) => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     if (userId === currentUser?.id) {
         alert("No puedes modificar tu propio rol.");
         return;
@@ -65,8 +67,9 @@ export const AdminPanel: React.FC = () => {
     }
 
     const updatedUser: User = { ...user, role: newRole };
-    storage.updateUser(updatedUser);
-    setUsers(storage.getUsers());
+    await storage.updateUser(updatedUser);
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
   const pendingUsers = users.filter(u => u.status === 'pending_approval');
@@ -77,41 +80,52 @@ export const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-serif font-bold text-family-900 border-b border-family-200 pb-4">Administración</h2>
+    <div className="max-w-5xl mx-auto space-y-8 pt-4">
+      <div className="mb-8 border-b border-brand-border/50 pb-4">
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-dark mb-1">Panel de Control</h2>
+        <p className="text-sm md:text-base text-brand-accent">Gestión de miembros y configuración del sistema</p>
+      </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-family-200 overflow-hidden">
-        <div className="bg-amber-50 p-4 border-b border-amber-100 flex items-center gap-2">
-            <ShieldAlert className="text-amber-600" size={20}/>
-            <h3 className="text-lg font-bold text-amber-800">Solicitudes Pendientes ({pendingUsers.length})</h3>
+      <div className="bg-white rounded-3xl shadow-card border border-brand-border/40 overflow-hidden">
+        <div className="bg-[#fff9eb] p-5 border-b border-[#f0e6d2] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+                <ShieldAlert className="text-[#b45309]" size={24}/>
+                <h3 className="text-xl font-bold text-[#92400e]">Solicitudes Pendientes</h3>
+            </div>
+            <div className="bg-[#fcd34d] text-[#92400e] px-3 py-1 rounded-full text-sm font-bold shadow-sm">
+                {pendingUsers.length}
+            </div>
         </div>
         
         {pendingUsers.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">No hay solicitudes pendientes.</div>
+            <div className="p-12 text-center text-brand-muted/70 bg-white">
+                <Shield className="mx-auto mb-4 opacity-20" size={48} />
+                <p className="text-lg italic">No hay solicitudes de registro pendientes de revisión.</p>
+            </div>
         ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-brand-border/30">
                 {pendingUsers.map(user => (
-                    <li key={user.id} className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <li key={user.id} className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:bg-brand-light/20 transition-colors">
                         <div>
-                            <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames.join(' ')}</p>
-                            <div className="text-sm text-slate-600 space-y-1 mt-1">
-                                <p>Email: {user.email}</p>
-                                <p>Padres: {user.parentsNames}</p>
-                                <p>Fecha Nacimiento: {new Date(user.birthDate).toLocaleDateString()}</p>
+                            <p className="font-bold text-xl text-brand-dark mb-2">{user.firstName} {user.surnames.join(' ')}</p>
+                            <div className="text-sm text-brand-muted space-y-1.5 font-medium">
+                                <p className="flex items-center gap-2"><span className="w-20 inline-block text-brand-muted/70">Email:</span> <span className="text-brand-text">{user.email}</span></p>
+                                <p className="flex items-center gap-2"><span className="w-20 inline-block text-brand-muted/70">Padres:</span> <span className="text-brand-text">{user.parentsNames}</span></p>
+                                <p className="flex items-center gap-2"><span className="w-20 inline-block text-brand-muted/70">Nacimiento:</span> <span className="text-brand-text">{new Date(user.birthDate).toLocaleDateString()}</span></p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3 w-full md:w-auto">
                             <button 
                                 onClick={() => handleAction(user.id, 'reject')}
-                                className="flex items-center gap-1 px-3 py-2 border border-red-200 text-red-700 rounded hover:bg-red-50 transition"
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-red-200 text-red-600 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all font-bold"
                             >
-                                <X size={16} /> Rechazar
+                                <X size={18} /> Rechazar
                             </button>
                             <button 
                                 onClick={() => handleAction(user.id, 'approve')}
-                                className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition shadow-sm"
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-accent text-white rounded-xl hover:bg-brand-dark transition-colors shadow-md font-bold"
                             >
-                                <Check size={16} /> Aprobar
+                                <Check size={18} /> Aprobar
                             </button>
                         </div>
                     </li>
@@ -120,39 +134,47 @@ export const AdminPanel: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-family-200 overflow-hidden">
-        <div className="bg-slate-50 p-4 border-b border-slate-100">
-            <h3 className="text-lg font-bold text-slate-700">Miembros Activos ({activeUsers.length})</h3>
+      <div className="bg-white rounded-3xl shadow-card border border-brand-border/40 overflow-hidden">
+        <div className="bg-brand-light/30 p-5 border-b border-brand-border/50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <Shield className="text-brand-dark" size={24} />
+                <h3 className="text-xl font-bold text-brand-dark">Miembros de la Familia</h3>
+            </div>
+            <div className="bg-brand-border/50 text-brand-dark px-3 py-1 rounded-full text-sm font-bold">
+                {activeUsers.length}
+            </div>
         </div>
         <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-white text-brand-muted/70 uppercase tracking-wider text-xs border-b-2 border-brand-border/30">
                     <tr>
-                        <th className="p-4 font-medium">Nombre</th>
-                        <th className="p-4 font-medium">Apellidos</th>
-                        <th className="p-4 font-medium">Email</th>
-                        <th className="p-4 font-medium">Rol</th>
-                        <th className="p-4 font-medium text-right">Acciones</th>
+                        <th className="p-5 font-bold">Nombre y Apellidos</th>
+                        <th className="p-5 font-bold">Contacto</th>
+                        <th className="p-5 font-bold">Rol</th>
+                        <th className="p-5 font-bold text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-brand-border/30">
                     {activeUsers.map(user => (
-                        <tr key={user.id} className="hover:bg-slate-50">
-                            <td className="p-4 text-slate-900">{user.firstName}</td>
-                            <td className="p-4 text-slate-600">{user.surnames.join(' ')}</td>
-                            <td className="p-4 text-slate-600">{user.email}</td>
-                            <td className="p-4">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
-                                    {user.role === 'admin' ? 'Administrador' : 'Miembro'}
+                        <tr key={user.id} className="hover:bg-brand-light/20 transition-colors">
+                            <td className="p-5">
+                                <div className="font-bold text-brand-dark text-base">{user.firstName}</div>
+                                <div className="text-brand-muted text-sm mt-0.5">{user.surnames.join(' ')}</div>
+                            </td>
+                            <td className="p-5 text-brand-text font-medium">{user.email}</td>
+                            <td className="p-5">
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider flex items-center gap-1.5 w-max ${user.role === 'admin' ? 'bg-[#f3e8ff] text-[#7e22ce] border border-[#e9d5ff]' : 'bg-brand-light text-brand-muted border border-brand-border/50'}`}>
+                                    {user.role === 'admin' && <Shield size={12} />}
+                                    {user.role === 'admin' ? 'ADMINISTRADOR' : 'MIEMBRO'}
                                 </span>
                             </td>
-                            <td className="p-4 text-right flex justify-end gap-2">
+                            <td className="p-5 text-right flex justify-end gap-3">
                                 {user.id !== currentUser?.id && (
                                     <>
                                         {user.role === 'member' ? (
                                             <button
                                                 onClick={() => handleRoleChange(user.id, 'admin')}
-                                                className="inline-flex items-center gap-1 text-xs px-3 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-full transition font-medium"
+                                                className="inline-flex items-center gap-1.5 text-xs px-4 py-2 bg-[#f3e8ff] text-[#7e22ce] hover:bg-[#e9d5ff] rounded-xl transition-colors font-bold shadow-sm"
                                                 title="Nombrar Administrador"
                                             >
                                                 <Shield size={14} /> Hacer Admin
@@ -160,7 +182,7 @@ export const AdminPanel: React.FC = () => {
                                         ) : (
                                             <button
                                                 onClick={() => handleRoleChange(user.id, 'member')}
-                                                className="inline-flex items-center gap-1 text-xs px-3 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition font-medium"
+                                                className="inline-flex items-center gap-1.5 text-xs px-4 py-2 bg-brand-light text-brand-muted hover:bg-brand-border/50 hover:text-brand-dark rounded-xl transition-colors font-bold shadow-sm"
                                                 title="Quitar permisos de Administrador"
                                             >
                                                 <ShieldOff size={14} /> Quitar Admin
@@ -169,7 +191,7 @@ export const AdminPanel: React.FC = () => {
                                         
                                         <button
                                             onClick={() => handleDelete(user.id, user.firstName)}
-                                            className="inline-flex items-center gap-1 text-xs px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-full transition font-medium"
+                                            className="inline-flex items-center gap-1.5 text-xs px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-xl transition-colors font-bold shadow-sm"
                                             title="Eliminar usuario"
                                         >
                                             <Trash2 size={14} /> Eliminar

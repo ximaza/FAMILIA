@@ -19,10 +19,10 @@ export const Notices: React.FC = () => {
   const [isDrafting, setIsDrafting] = useState(false);
 
   useEffect(() => {
-    setNotices(storage.getNotices());
+    storage.getNotices().then(setNotices);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
@@ -37,8 +37,9 @@ export const Notices: React.FC = () => {
       date: new Date().toISOString()
     };
 
-    storage.addNotice(newNotice);
-    setNotices(storage.getNotices());
+    await storage.addNotice(newNotice);
+    const updatedNotices = await storage.getNotices();
+    setNotices(updatedNotices);
     resetForm();
   };
 
@@ -93,40 +94,40 @@ export const Notices: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-serif font-bold text-family-900">Comunicaciones</h2>
+    <div className="max-w-4xl mx-auto pt-4">
+      <div className="flex justify-between items-center mb-8 border-b border-brand-border/50 pb-4">
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-dark">Comunicaciones</h2>
         <button 
           onClick={() => setShowForm(!showForm)}
-          className="bg-family-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-family-700 transition"
+          className="bg-brand-accent text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-brand-dark transition-colors shadow-md font-bold"
         >
-          {showForm ? <X size={18} /> : <Plus size={18} />}
-          <span>{showForm ? 'Cancelar' : 'Nueva Comunicación'}</span>
+          {showForm ? <X size={20} /> : <Plus size={20} />}
+          <span className="hidden md:inline">{showForm ? 'Cancelar' : 'Nueva Comunicación'}</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-family-200 mb-8 animate-fade-in">
-          <h3 className="text-lg font-bold mb-4 text-family-800">Publicar nueva comunicación</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-card border border-brand-border/40 mb-10 animate-fade-in">
+          <h3 className="text-xl font-bold mb-6 text-brand-text">Publicar nueva comunicación</h3>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Título / Tema</label>
+                    <label className="block text-xs font-bold text-brand-muted/70 uppercase tracking-wider mb-2">Título / Tema</label>
                     <input 
                         required
                         type="text" 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-400 outline-none"
+                        className="w-full p-3.5 bg-brand-light/50 border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all"
                         placeholder="Ej: Cena de Navidad, Vendo coche..."
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                    <label className="block text-xs font-bold text-brand-muted/70 uppercase tracking-wider mb-2">Tipo</label>
                     <select 
                         value={type}
                         onChange={(e) => setType(e.target.value as Notice['type'])}
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-400 outline-none"
+                        className="w-full p-3.5 bg-brand-light/50 border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all cursor-pointer"
                     >
                         <option value="general">General</option>
                         <option value="event">Evento / Reunión</option>
@@ -136,15 +137,15 @@ export const Notices: React.FC = () => {
             </div>
             
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium text-slate-700">Contenido</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-brand-muted/70 uppercase tracking-wider">Contenido</label>
                 <button 
                     type="button"
                     onClick={handleAIDraft}
                     disabled={isDrafting}
-                    className="text-xs flex items-center gap-1 text-family-600 hover:text-family-800 font-medium"
+                    className="text-xs flex items-center gap-1.5 text-brand-accent hover:text-brand-dark font-bold transition-colors"
                 >
-                    <Wand2 size={14} />
+                    <Wand2 size={16} />
                     {isDrafting ? 'Redactando...' : 'Asistente de Redacción IA'}
                 </button>
               </div>
@@ -153,30 +154,30 @@ export const Notices: React.FC = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={5}
-                className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-400 outline-none"
+                className="w-full p-4 bg-brand-light/50 border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all resize-y leading-relaxed"
                 placeholder="Escribe los detalles aquí..."
               />
             </div>
 
-            <div className="border-t border-slate-100 pt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Imagen adjunta (Opcional)</label>
+            <div className="border-t border-brand-border/40 pt-6">
+                <label className="block text-xs font-bold text-brand-muted/70 uppercase tracking-wider mb-3">Imagen adjunta (Opcional)</label>
                 {!imageUrl ? (
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 transition text-sm"
+                        className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 border-2 border-dashed border-brand-border rounded-xl text-brand-muted font-medium hover:bg-brand-light/50 hover:text-brand-accent hover:border-brand-accent transition-all text-sm"
                     >
-                        <ImageIcon size={18} /> Seleccionar foto (Max 800KB)
+                        <ImageIcon size={20} /> Seleccionar foto (Max 800KB)
                     </button>
                 ) : (
                     <div className="relative inline-block">
-                        <img src={imageUrl} alt="Preview" className="h-32 w-auto rounded-lg border border-slate-200" />
+                        <img src={imageUrl} alt="Preview" className="h-40 w-auto rounded-xl border border-brand-border shadow-sm object-cover" />
                         <button
                             type="button"
                             onClick={() => setImageUrl('')}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            className="absolute -top-3 -right-3 bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 hover:scale-110 transition-transform shadow-lg"
                         >
-                            <X size={12} />
+                            <X size={16} />
                         </button>
                     </div>
                 )}
@@ -189,12 +190,12 @@ export const Notices: React.FC = () => {
                 />
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-4">
                 <button 
                     type="submit" 
-                    className="bg-family-600 text-white px-6 py-2 rounded-lg hover:bg-family-700 transition"
+                    className="bg-brand-accent text-white px-8 py-3 rounded-xl hover:bg-brand-dark font-bold shadow-md transition-colors w-full md:w-auto text-center"
                 >
-                    Publicar
+                    Publicar Comunicación
                 </button>
             </div>
           </form>
@@ -203,39 +204,43 @@ export const Notices: React.FC = () => {
 
       <div className="grid gap-6">
         {notices.map((notice) => (
-          <div key={notice.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex justify-between items-start mb-3">
+          <div key={notice.id} className="bg-white p-6 md:p-8 rounded-2xl shadow-card border border-brand-border/40 overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
-                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${getBadgeColor(notice.type)}`}>
+                 <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${getBadgeColor(notice.type)}`}>
                     {getTypeLabel(notice.type)}
                  </span>
-                 <span className="text-slate-400 text-sm">{new Date(notice.date).toLocaleDateString()}</span>
+                 <span className="text-brand-muted/80 text-sm font-medium">{new Date(notice.date).toLocaleDateString()}</span>
               </div>
             </div>
             
-            <h3 className="text-xl font-bold text-slate-800 mb-3">{notice.title}</h3>
+            <h3 className="text-2xl font-serif font-bold text-brand-dark mb-4 leading-tight">{notice.title}</h3>
             
             {notice.imageUrl && (
-                <div className="mb-4 rounded-lg overflow-hidden border border-slate-100">
-                    <img src={notice.imageUrl} alt={notice.title} className="w-full h-64 object-cover" />
+                <div className="mb-6 rounded-xl overflow-hidden border border-brand-border/30 bg-brand-light/20">
+                    <img src={notice.imageUrl} alt={notice.title} className="w-full h-64 md:h-80 object-cover hover:scale-105 transition duration-700 ease-out" />
                 </div>
             )}
 
-            <p className="text-slate-600 whitespace-pre-wrap">{notice.content}</p>
+            <p className="text-brand-text/90 whitespace-pre-wrap leading-relaxed text-[1.05rem]">{notice.content}</p>
             
-            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-sm text-slate-500">
-                <div className="w-6 h-6 bg-family-200 rounded-full flex items-center justify-center text-family-800 font-bold text-xs">
-                    {notice.authorName.charAt(0)}
+            <div className="mt-8 pt-6 border-t border-brand-border/30 flex items-center justify-between">
+                <div className="flex items-center gap-3 text-sm text-brand-muted font-medium">
+                    <div className="w-8 h-8 bg-brand-light rounded-full flex items-center justify-center text-brand-accent font-bold text-sm border border-brand-border shadow-inner">
+                        {notice.authorName.charAt(0)}
+                    </div>
+                    <span>Publicado por <strong className="text-brand-text">{notice.authorName}</strong></span>
                 </div>
-                <span>Publicado por {notice.authorName}</span>
             </div>
           </div>
         ))}
 
         {notices.length === 0 && (
-            <div className="text-center py-12 text-slate-400 bg-white rounded-xl border border-dashed border-slate-300">
-                <Tag size={48} className="mx-auto mb-2 opacity-20" />
-                <p>No hay comunicaciones publicadas aún.</p>
+            <div className="text-center py-16 text-brand-muted/60 bg-white rounded-3xl border border-dashed border-brand-border/80">
+                <div className="w-20 h-20 bg-brand-light/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-border/50">
+                    <Tag size={40} className="text-brand-muted/40" />
+                </div>
+                <p className="text-lg font-medium">No hay comunicaciones publicadas aún.</p>
             </div>
         )}
       </div>
