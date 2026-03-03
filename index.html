@@ -10,30 +10,21 @@
         theme: {
           extend: {
             colors: {
-              turquoise: {
-                50: '#f1fcfb',
-                100: '#dcf7f5',
-                200: '#beeeea',
-                300: '#91ded9',
-                400: '#5ec6c1',
-                500: '#43aba7',
-                600: '#348a88',
-                700: '#2d6f6e',
-                800: '#285959',
-                900: '#254b4b',
-              },
-              family: {
-                50: '#f1fcfb',
-                100: '#dcf7f5',
-                200: '#beeeea',
-                300: '#91ded9',
-                400: '#5ec6c1',
-                500: '#43aba7',
-                600: '#348a88',
-                700: '#2d6f6e',
-                800: '#285959',
-                900: '#254b4b',
+              brand: {
+                dark: '#35726b',    /* Header & Main Brand Color */
+                accent: '#449187',  /* Buttons & Active States */
+                light: '#f4fbfb',   /* Main Background Color */
+                text: '#1a3c38',    /* Primary Text Color */
+                muted: '#648b88',   /* Secondary/Muted Text */
+                border: '#cde4e2',  /* Subtle Borders */
               }
+            },
+            fontFamily: {
+              serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+              sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', 'sans-serif'],
+            },
+            boxShadow: {
+              'card': '0 4px 6px -1px rgba(53, 114, 107, 0.1), 0 2px 4px -1px rgba(53, 114, 107, 0.06)',
             }
           }
         }
@@ -50,7 +41,36 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+<style>
+    /* Global scrollbar styling for webkit */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #cde4e2;
+        border-radius: 20px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #648b88;
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Simple fade-in animation for page transitions */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+</style>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="text/javascript">
    (function(){
@@ -60,7 +80,7 @@
    })();
 </script>
 </head>
-  <body class="bg-family-50 text-slate-800">
+  <body class="bg-brand-light text-brand-text font-sans selection:bg-brand-accent selection:text-white">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

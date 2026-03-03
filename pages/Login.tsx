@@ -103,176 +103,175 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-family-50 flex flex-col justify-center items-center p-4">
-      <div className="mb-8 text-center">
-        <div className="w-20 h-20 bg-family-800 rounded-full flex items-center justify-center text-family-100 mx-auto mb-4 shadow-xl">
-            <BookOpen size={40} />
+    <div className="min-h-screen bg-brand-light flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="w-20 h-20 bg-brand-dark rounded-full flex items-center justify-center text-white mx-auto mb-4 shadow-lg">
+              <BookOpen size={40} />
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-brand-dark uppercase tracking-widest">FAMILIA MAZARRASA</h1>
         </div>
-        <h1 className="text-3xl font-serif font-bold text-family-900 uppercase tracking-wide">FAMILIA MAZARRASA</h1>
-      </div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-family-200">
-        {!isRegistering ? (
-            // Login Form
-            <form onSubmit={handleLogin} className="space-y-6">
-                <h2 className="text-2xl font-bold text-center text-slate-800">Iniciar Sesión</h2>
-                <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Correo Electrónico</label>
-                    <input 
-                        type="email" 
-                        required
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-family-500 outline-none transition"
-                        placeholder="tu@email.com"
-                        value={loginEmail}
-                        onChange={e => setLoginEmail(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">Contraseña</label>
-                    <input 
-                        type="password" 
-                        required
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-family-500 outline-none transition"
-                        placeholder="••••••"
-                        value={loginPassword}
-                        onChange={e => setLoginPassword(e.target.value)}
-                    />
-                </div>
-                <button 
-                    type="submit"
-                    className="w-full bg-family-700 text-white py-3 rounded-lg font-bold hover:bg-family-800 transition shadow-md"
-                >
-                    Entrar
-                </button>
-                <div className="text-center pt-4 border-t border-slate-100">
-                    <p className="text-sm text-slate-500 mb-2">¿Eres nuevo en la plataforma?</p>
-                    <button 
-                        type="button"
-                        onClick={() => setIsRegistering(true)}
-                        className="text-family-600 font-medium hover:underline"
-                    >
-                        Solicitar Registro
-                    </button>
-                </div>
-                <div className="text-xs text-center text-slate-400">
-                    * Primer acceso: <br/><strong>joaquin@maz.com</strong> / <strong>admin123</strong>
-                </div>
-            </form>
-        ) : (
-            // Register Form
-            <form onSubmit={handleRegister} className="space-y-4">
-                <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
-                
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase">Nombre</label>
-                        <input 
-                            required
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.firstName}
-                            onChange={e => setFormData({...formData, firstName: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">1º Apellido</label>
-                        <input 
-                            required
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.surname1}
-                            onChange={e => setFormData({...formData, surname1: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">2º Apellido</label>
-                        <input 
-                            required
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.surname2}
-                            onChange={e => setFormData({...formData, surname2: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">3º Apellido</label>
-                        <input 
-                            required
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.surname3}
-                            onChange={e => setFormData({...formData, surname3: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">4º Apellido</label>
-                        <input 
-                            required
-                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.surname4}
-                            onChange={e => setFormData({...formData, surname4: e.target.value})}
-                        />
-                    </div>
-                </div>
+        <div className="bg-white p-6 md:p-8 rounded-[1.25rem] shadow-card w-full border border-brand-border/40">
+          {!isRegistering ? (
+              // Login Form
+              <form onSubmit={handleLogin} className="space-y-6">
+                  <h2 className="text-[1.35rem] font-bold text-center text-brand-text mb-8 tracking-wide">Iniciar Sesión</h2>
+                  <div>
+                      <label className="block text-[0.85rem] font-bold text-brand-muted/90 mb-2">Correo Electrónico</label>
+                      <input
+                          type="email"
+                          required
+                          className="w-full p-3 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all placeholder:text-brand-muted/50"
+                          placeholder="tu@email.com"
+                          value={loginEmail}
+                          onChange={e => setLoginEmail(e.target.value)}
+                      />
+                  </div>
+                  <div>
+                      <label className="block text-[0.85rem] font-bold text-brand-muted/90 mb-2">Contraseña</label>
+                      <input
+                          type="password"
+                          required
+                          className="w-full p-3 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent focus:border-brand-accent outline-none transition-all placeholder:text-brand-muted/50 text-2xl tracking-widest pt-4 pb-2"
+                          placeholder="••••••"
+                          value={loginPassword}
+                          onChange={e => setLoginPassword(e.target.value)}
+                      />
+                  </div>
+                  <button
+                      type="submit"
+                      className="w-full bg-brand-accent text-white py-3.5 rounded-lg font-bold hover:bg-brand-dark transition-colors shadow-sm mt-4 text-sm"
+                  >
+                      Entrar
+                  </button>
+                  <div className="text-center pt-8 mt-4 border-t border-brand-border/40">
+                      <p className="text-[0.9rem] text-brand-muted/90 mb-2">¿Eres nuevo en la plataforma?</p>
+                      <button
+                          type="button"
+                          onClick={() => setIsRegistering(true)}
+                          className="text-brand-accent font-bold hover:text-brand-dark transition-colors text-base"
+                      >
+                          Solicitar Registro
+                      </button>
+                  </div>
+              </form>
+          ) : (
+              // Register Form
+              <form onSubmit={handleRegister} className="space-y-5">
+                  <h2 className="text-[1.35rem] font-bold text-center text-brand-text mb-6 tracking-wide">Solicitud de Registro</h2>
 
-                <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Fecha Nacimiento</label>
-                    <input 
-                        type="date"
-                        required
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        value={formData.birthDate}
-                        onChange={e => setFormData({...formData, birthDate: e.target.value})}
-                    />
-                </div>
-                
-                <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre de los Padres</label>
-                    <input 
-                        required
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        placeholder="Padre y Madre..."
-                        value={formData.parentsNames}
-                        onChange={e => setFormData({...formData, parentsNames: e.target.value})}
-                    />
-                </div>
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                          <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">NOMBRE</label>
+                          <input
+                              required
+                              className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                              value={formData.firstName}
+                              onChange={e => setFormData({...formData, firstName: e.target.value})}
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">1º APELLIDO</label>
+                          <input
+                              required
+                              className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                              value={formData.surname1}
+                              onChange={e => setFormData({...formData, surname1: e.target.value})}
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">2º APELLIDO</label>
+                          <input
+                              required
+                              className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                              value={formData.surname2}
+                              onChange={e => setFormData({...formData, surname2: e.target.value})}
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">3º APELLIDO</label>
+                          <input
+                              required
+                              className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                              value={formData.surname3}
+                              onChange={e => setFormData({...formData, surname3: e.target.value})}
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">4º APELLIDO</label>
+                          <input
+                              required
+                              className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                              value={formData.surname4}
+                              onChange={e => setFormData({...formData, surname4: e.target.value})}
+                          />
+                      </div>
+                  </div>
 
-                <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Email de Contacto</label>
-                    <input 
-                        type="email"
-                        required
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        value={formData.email}
-                        onChange={e => setFormData({...formData, email: e.target.value})}
-                    />
-                </div>
+                  <div>
+                      <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">FECHA NACIMIENTO</label>
+                      <input
+                          type="date"
+                          required
+                          className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all text-brand-text"
+                          value={formData.birthDate}
+                          onChange={e => setFormData({...formData, birthDate: e.target.value})}
+                      />
+                  </div>
 
-                <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Clave Personal (Mín 6, Alfanumérica)</label>
-                    <input 
-                        type="password"
-                        required
-                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        placeholder="Ej: clave123"
-                        value={formData.password}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
-                    />
-                </div>
+                  <div>
+                      <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">NOMBRE DE LOS PADRES</label>
+                      <input
+                          required
+                          className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all placeholder:text-brand-muted/50"
+                          placeholder="Padre y Madre..."
+                          value={formData.parentsNames}
+                          onChange={e => setFormData({...formData, parentsNames: e.target.value})}
+                      />
+                  </div>
 
-                <div className="pt-4 flex gap-3">
-                    <button 
-                        type="button"
-                        onClick={() => setIsRegistering(false)}
-                        className="flex-1 py-3 text-slate-600 font-medium hover:bg-slate-50 rounded-lg"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        type="submit"
-                        className="flex-1 bg-family-600 text-white py-3 rounded-lg font-bold hover:bg-family-700 shadow-md"
-                    >
-                        Enviar
-                    </button>
-                </div>
-            </form>
-        )}
+                  <div>
+                      <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">EMAIL DE CONTACTO</label>
+                      <input
+                          type="email"
+                          required
+                          className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                          value={formData.email}
+                          onChange={e => setFormData({...formData, email: e.target.value})}
+                      />
+                  </div>
+
+                  <div>
+                      <label className="text-[0.7rem] font-bold text-brand-muted/90 uppercase tracking-wider mb-1 block">CLAVE PERSONAL (MÍN 6, ALFANUMÉRICA)</label>
+                      <input
+                          type="password"
+                          required
+                          className="w-full p-2.5 bg-white border border-brand-border rounded-lg focus:ring-2 focus:ring-brand-accent outline-none transition-all placeholder:text-brand-muted/50"
+                          placeholder="Ej: clave123"
+                          value={formData.password}
+                          onChange={e => setFormData({...formData, password: e.target.value})}
+                      />
+                  </div>
+
+                  <div className="pt-6 flex gap-4 mt-6">
+                      <button
+                          type="button"
+                          onClick={() => setIsRegistering(false)}
+                          className="flex-1 py-3 text-brand-text font-bold hover:bg-brand-light rounded-lg transition-colors bg-white border-none"
+                      >
+                          Cancelar
+                      </button>
+                      <button
+                          type="submit"
+                          className="flex-1 bg-brand-accent text-white py-3 rounded-lg font-bold hover:bg-brand-dark transition-colors shadow-sm"
+                      >
+                          Enviar
+                      </button>
+                  </div>
+              </form>
+          )}
+        </div>
       </div>
     </div>
   );

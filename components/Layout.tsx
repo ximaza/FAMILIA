@@ -28,26 +28,26 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
   }
 
   return (
-    <div className="min-h-screen bg-family-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-brand-light flex flex-col md:flex-row font-sans">
       {/* Mobile Header */}
-      <div className="md:hidden bg-turquoise-700 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <h1 className="text-xl font-bold font-serif">FAMILIA MAZARRASA</h1>
-        <button onClick={() => setSidebarOpen(!isSidebarOpen)}>
-          {isSidebarOpen ? <X /> : <Menu />}
+      <div className="md:hidden bg-brand-dark text-white p-4 flex justify-between items-center sticky top-0 z-50 rounded-b-xl shadow-md mx-2 mt-2">
+        <h1 className="text-lg font-bold font-serif tracking-wide uppercase">FAMILIA MAZARRASA</h1>
+        <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="focus:outline-none hover:text-brand-border transition-colors">
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-turquoise-600 text-white transform transition-transform duration-300 ease-in-out shadow-xl
+        fixed inset-y-0 left-0 z-40 w-64 bg-brand-dark text-white transform transition-transform duration-300 ease-in-out shadow-2xl
         md:relative md:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6">
-          <h1 className="text-xl font-bold font-serif mb-1">FAMILIA MAZARRASA</h1>
+        <div className="p-6 border-b border-brand-accent/30">
+          <h1 className="text-xl font-bold font-serif tracking-widest uppercase text-center">FAMILIA MAZARRASA</h1>
         </div>
 
-        <nav className="mt-6 px-4 space-y-2">
+        <nav className="mt-6 px-4 space-y-2 flex-1 overflow-y-auto pb-32">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -56,35 +56,37 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
                 setSidebarOpen(false);
               }}
               className={`
-                w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
                 ${activePage === item.id 
-                  ? 'bg-turquoise-700 text-white font-medium shadow-sm' 
-                  : 'hover:bg-turquoise-500 text-turquoise-50'}
+                  ? 'bg-brand-accent text-white font-medium shadow-card'
+                  : 'hover:bg-brand-accent/50 text-brand-border'}
               `}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className={activePage === item.id ? 'text-white' : 'text-brand-border'}>
+                {item.icon}
+              </span>
+              <span className="text-sm tracking-wide">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t border-turquoise-700">
+        <div className="absolute bottom-0 w-full p-4 bg-brand-dark border-t border-brand-accent/30">
           <button 
              onClick={() => {
                 onNavigate('profile');
                 setSidebarOpen(false);
              }}
-             className={`flex items-center space-x-3 mb-4 px-2 w-full text-left rounded p-2 transition
-                ${activePage === 'profile' ? 'bg-turquoise-700' : 'hover:bg-turquoise-700'}
+             className={`flex items-center space-x-3 mb-4 px-3 w-full text-left rounded-xl py-3 transition-all duration-200
+                ${activePage === 'profile' ? 'bg-brand-accent shadow-card' : 'hover:bg-brand-accent/50'}
              `}
           >
-            <div className="w-8 h-8 rounded-full bg-turquoise-400 flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold text-lg shadow-inner">
               {currentUser?.firstName.charAt(0)}
             </div>
             <div className="overflow-hidden flex-1">
-              <p className="text-sm font-medium truncate">{currentUser?.firstName}</p>
-              <div className="flex items-center gap-1 text-xs text-turquoise-200">
-                <UserCircle size={10} />
+              <p className="text-sm font-semibold truncate text-white">{currentUser?.firstName}</p>
+              <div className="flex items-center gap-1 text-xs text-brand-border mt-0.5">
+                <UserCircle size={12} />
                 <span>Mi Perfil</span>
               </div>
             </div>
@@ -92,17 +94,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
 
           <button 
             onClick={logout}
-            className="w-full flex items-center space-x-2 text-turquoise-100 hover:text-white px-2 py-2 rounded hover:bg-turquoise-700 transition-colors"
+            className="w-full flex items-center space-x-3 text-brand-border hover:text-white px-3 py-3 rounded-xl hover:bg-red-500/20 hover:text-red-100 transition-all duration-200"
           >
             <LogOut size={18} />
-            <span>Cerrar Sesión</span>
+            <span className="text-sm font-medium">Cerrar Sesión</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-[100vw] overflow-x-hidden">
+        <div className="max-w-4xl mx-auto pb-20 md:pb-0">
            {children}
         </div>
       </main>
@@ -110,7 +112,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
       {/* Overlay for mobile sidebar */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 bg-brand-dark/60 backdrop-blur-sm z-30 md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
