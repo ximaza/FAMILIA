@@ -76,18 +76,25 @@ export const Login: React.FC = () => {
 
     await register(newUser);
     
-    // Send welcome email
+    // Send welcome email via EmailJS
     try {
-        await fetch('/api/send-welcome-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email: newUser.email, 
-                name: newUser.firstName 
-            })
-        });
+        // @ts-ignore - emailjs is loaded globally via index.html
+        if (window.emailjs) {
+            // @ts-ignore
+            await window.emailjs.send(
+                "YOUR_SERVICE_ID", // TODO: Replace with your EmailJS service ID
+                "YOUR_WELCOME_TEMPLATE_ID", // TODO: Replace with your Welcome Email Template ID
+                {
+                    to_email: newUser.email,
+                    to_name: newUser.firstName,
+                }
+            );
+            console.log("Welcome email sent via EmailJS");
+        } else {
+            console.warn("EmailJS is not loaded.");
+        }
     } catch (error) {
-        console.error("Error calling email API:", error);
+        console.error("Error sending welcome email via EmailJS:", error);
     }
 
     alert('Registro completado. Su cuenta está pendiente de aprobación por un administrador.');

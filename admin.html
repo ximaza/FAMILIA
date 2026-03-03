@@ -33,11 +33,20 @@
         </tbody>
     </table>
 
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init({
+            publicKey: "YOUR_PUBLIC_KEY",
+          });
+       })();
+    </script>
+
     <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // TODO: Replace with your app's Firebase project configuration
         const firebaseConfig = {
@@ -90,9 +99,39 @@
             if (confirm('¿Seguro que desea aprobar este usuario?')) {
                 try {
                     const userRef = doc(db, "users", userId);
+
+                    // Fetch user details for the email
+                    const userSnap = await getDoc(userRef);
+                    let userEmail = "";
+                    let userName = "";
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        userEmail = userData.email;
+                        userName = userData.firstName;
+                    }
+
+                    // Update status
                     await updateDoc(userRef, {
                         status: "active"
                     });
+
+                    // Send approval email
+                    if (userEmail && window.emailjs) {
+                        try {
+                            await emailjs.send(
+                                "YOUR_SERVICE_ID", // TODO: Replace with your EmailJS service ID
+                                "YOUR_APPROVAL_TEMPLATE_ID", // TODO: Replace with your Approval Email Template ID
+                                {
+                                    to_email: userEmail,
+                                    to_name: userName,
+                                }
+                            );
+                            console.log("Approval email sent via EmailJS");
+                        } catch (emailError) {
+                            console.error("Error sending approval email via EmailJS:", emailError);
+                        }
+                    }
+
                     alert('Usuario aprobado.');
                     loadUsers();
                 } catch (error) {
