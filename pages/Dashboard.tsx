@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
-import { Edit2, Save, X, Image as ImageIcon } from 'lucide-react';
-import { HomePageContent } from '../types';
+import { Edit2, Save, X, Image as ImageIcon, Bell, ChevronRight } from 'lucide-react';
+import { HomePageContent, Notice } from '../types';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [content, setContent] = useState<HomePageContent>(storage.getHomePage());
+  const [recentNotices, setRecentNotices] = useState<Notice[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent>(content);
 
   const isAdmin = currentUser?.role === 'admin';
+
+  useEffect(() => {
+    // Fetch latest 3 notices
+    const allNotices = storage.getNotices();
+    setRecentNotices(allNotices.slice(0, 3));
+  }, []);
 
   const handleSave = () => {
     const updatedContent = {
@@ -142,10 +149,48 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             )}
 
             {!content.imageUrl && !content.bodyContent && (
-              <div className="min-h-[200px] flex items-center justify-center">
+              <div className="min-h-[100px] flex items-center justify-center">
                 {/* Espacio reservado para futura imagen o texto */}
               </div>
             )}
+
+            {/* Recent Activity Section */}
+            <div className="mt-16 pt-8 border-t border-slate-100">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-serif font-bold text-slate-800">Lo último que se ha hecho</h3>
+                <button
+                  onClick={() => onNavigate('notices')}
+                  className="text-turquoise-600 hover:text-turquoise-700 font-medium flex items-center gap-1 transition text-sm"
+                >
+                  Ver todas <ChevronRight size={16} />
+                </button>
+              </div>
+
+              {recentNotices.length > 0 ? (
+                <div className="grid gap-4">
+                  {recentNotices.map(notice => (
+                    <div
+                      key={notice.id}
+                      onClick={() => onNavigate('notices')}
+                      className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-turquoise-200 transition cursor-pointer flex gap-4 items-center"
+                    >
+                      <div className="w-10 h-10 bg-turquoise-50 rounded-full flex items-center justify-center text-turquoise-600 flex-shrink-0">
+                        <Bell size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-800 truncate">{notice.title}</h4>
+                        <p className="text-xs text-slate-500">{new Date(notice.date).toLocaleDateString()}</p>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-300" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400">
+                  No hay comunicaciones recientes.
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
