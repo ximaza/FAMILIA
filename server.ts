@@ -16,9 +16,8 @@ async function startServer() {
 
   // Helper to get clean credentials
   const getEmailConfig = () => {
-    // Hardcoding the values provided to ensure they are used exactly
-    const user = "camaraberango@gmail.com";
-    const pass = "nwnnoladpaxqqqid"; // Removed spaces for maximum compatibility
+    const user = process.env.EMAIL_USER || "";
+    const pass = process.env.EMAIL_PASS || "";
     
     return { user, pass };
   };
