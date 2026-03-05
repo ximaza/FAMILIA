@@ -19,10 +19,10 @@ export const Notices: React.FC = () => {
   const [isDrafting, setIsDrafting] = useState(false);
 
   useEffect(() => {
-    setNotices(storage.getNotices());
+    storage.getNotices().then(setNotices);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
@@ -108,7 +108,7 @@ export const Notices: React.FC = () => {
       {showForm && (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-family-200 mb-8 animate-fade-in">
           <h3 className="text-lg font-bold mb-4 text-family-800">Publicar nueva comunicación</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleAddNotice} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Título / Tema</label>

@@ -16,7 +16,7 @@ export const Profile: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser || !formData.id) return;
     
     const updatedUser: User = {

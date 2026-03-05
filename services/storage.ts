@@ -1,17 +1,17 @@
 import { User, Notice, FamilyHistory } from '../types';
+import { db } from './firebase';
+import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
 
-const USERS_KEY = 'maz_users';
-const NOTICES_KEY = 'maz_notices';
-const HISTORY_KEY = 'maz_history';
-const HOME_PAGE_KEY = 'maz_home_page';
-const CURRENT_USER_KEY = 'maz_current_user_id';
+const USERS_COL = 'users';
+const NOTICES_COL = 'notices';
+const SYSTEM_COL = 'system';
 
 // Initial Seed Data - Updated to Joaquín Mazarrasa Coll
 const seedAdmin: User = {
   id: 'admin-1',
   firstName: 'Joaquín',
-  surnames: ['Mazarrasa', 'Coll', '', ''], // Assuming 3rd and 4th are empty or not provided
-  birthDate: '1960-01-01', // Placeholder date
+  surnames: ['Mazarrasa', 'Coll', '', ''],
+  birthDate: '1960-01-01',
   parentsNames: 'Fundadores de la rama',
   email: 'joaquin@maz.com',
   password: 'admin123', 
@@ -33,78 +33,78 @@ const seedHomePage: any = {
   lastUpdated: new Date().toISOString()
 };
 
-const initializeStorage = () => {
-  // Handle Users
-  let users: User[] = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  
-  // Force update or add the seed admin (Joaquín) to replace the old default admin
-  const adminIndex = users.findIndex(u => u.id === seedAdmin.id);
-  if (adminIndex !== -1) {
-    users[adminIndex] = seedAdmin; // Overwrite existing admin
-  } else {
-    users.push(seedAdmin); // Add if not exists
-  }
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-  // Handle History
-  if (!localStorage.getItem(HISTORY_KEY)) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(seedHistory));
-  }
-
-  // Handle Notices
-  if (!localStorage.getItem(NOTICES_KEY)) {
-    localStorage.setItem(NOTICES_KEY, JSON.stringify([]));
-  }
-
-  // Handle Home Page
-  if (!localStorage.getItem(HOME_PAGE_KEY)) {
-    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(seedHomePage));
+// Initial setup to seed empty database
+export const initializeStorage = async () => {
+  try {
+    const adminDoc = await getDoc(doc(db, USERS_COL, seedAdmin.id));
+    if (!adminDoc.exists()) {
+      await setDoc(doc(db, USERS_COL, seedAdmin.id), seedAdmin);
+    }
+    const historyDoc = await getDoc(doc(db, SYSTEM_COL, 'history'));
+    if (!historyDoc.exists()) {
+      await setDoc(doc(db, SYSTEM_COL, 'history'), seedHistory);
+    }
+    const homeDoc = await getDoc(doc(db, SYSTEM_COL, 'homepage'));
+    if (!homeDoc.exists()) {
+      await setDoc(doc(db, SYSTEM_COL, 'homepage'), seedHomePage);
+    }
+  } catch (err) {
+    console.error("Error seeding DB:", err);
   }
 };
 
+// Wait for initialization (should ideally be done once at startup)
 initializeStorage();
 
 export const storage = {
-  getUsers: (): User[] => JSON.parse(localStorage.getItem(USERS_KEY) || '[]'),
+  getUsers: async (): Promise<User[]> => {
+    const q = collection(db, USERS_COL);
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as User);
+  },
   
-  saveUser: (user: User) => {
-    const users = storage.getUsers();
-    users.push(user);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  saveUser: async (user: User): Promise<void> => {
+    await setDoc(doc(db, USERS_COL, user.id), user);
   },
 
-  updateUser: (updatedUser: User) => {
-    const users = storage.getUsers().map(u => u.id === updatedUser.id ? updatedUser : u);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  updateUser: async (updatedUser: User): Promise<void> => {
+    await updateDoc(doc(db, USERS_COL, updatedUser.id), { ...updatedUser });
   },
 
-  deleteUser: (userId: string) => {
-    const users = storage.getUsers().filter(u => u.id !== userId);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  deleteUser: async (userId: string): Promise<void> => {
+    await deleteDoc(doc(db, USERS_COL, userId));
   },
 
-  getNotices: (): Notice[] => JSON.parse(localStorage.getItem(NOTICES_KEY) || '[]'),
+  getNotices: async (): Promise<Notice[]> => {
+    const q = query(collection(db, NOTICES_COL), orderBy('date', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as Notice);
+  },
   
-  addNotice: (notice: Notice) => {
-    const notices = storage.getNotices();
-    notices.unshift(notice); // Newest first
-    localStorage.setItem(NOTICES_KEY, JSON.stringify(notices));
+  addNotice: async (notice: Notice): Promise<void> => {
+    await setDoc(doc(db, NOTICES_COL, notice.id), notice);
   },
 
-  getHistory: (): FamilyHistory => JSON.parse(localStorage.getItem(HISTORY_KEY) || JSON.stringify(seedHistory)),
+  getHistory: async (): Promise<FamilyHistory> => {
+    const d = await getDoc(doc(db, SYSTEM_COL, 'history'));
+    return d.exists() ? (d.data() as FamilyHistory) : seedHistory;
+  },
   
-  saveHistory: (history: FamilyHistory) => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  saveHistory: async (history: FamilyHistory): Promise<void> => {
+    await setDoc(doc(db, SYSTEM_COL, 'history'), history);
   },
 
-  getHomePage: () => JSON.parse(localStorage.getItem(HOME_PAGE_KEY) || JSON.stringify(seedHomePage)),
+  getHomePage: async (): Promise<any> => {
+    const d = await getDoc(doc(db, SYSTEM_COL, 'homepage'));
+    return d.exists() ? d.data() : seedHomePage;
+  },
   
-  saveHomePage: (content: any) => {
-    localStorage.setItem(HOME_PAGE_KEY, JSON.stringify(content));
+  saveHomePage: async (content: any): Promise<void> => {
+    await setDoc(doc(db, SYSTEM_COL, 'homepage'), content);
   },
 
-  login: (email: string, password: string): User | undefined => {
-    const users = storage.getUsers();
+  login: async (email: string, password: string): Promise<User | undefined> => {
+    const users = await storage.getUsers();
     return users.find(u => 
       u.email.toLowerCase() === email.toLowerCase() && 
       u.password === password

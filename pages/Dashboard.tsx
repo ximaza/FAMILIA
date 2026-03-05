@@ -6,18 +6,29 @@ import { HomePageContent } from '../types';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
-  const [content, setContent] = useState<HomePageContent>(storage.getHomePage());
+  const [content, setContent] = useState<HomePageContent | null>(null);
+
+  useEffect(() => {
+    storage.getHomePage().then(setContent);
+  }, []);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<HomePageContent>(content);
+  const [editForm, setEditForm] = useState<HomePageContent | null>(null);
+
+  useEffect(() => {
+    if (content && !editForm) {
+      setEditForm(content);
+    }
+  }, [content, editForm]);
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!content || !editForm) return;
     const updatedContent = {
       ...editForm,
       lastUpdated: new Date().toISOString()
     };
-    storage.saveHomePage(updatedContent);
+    await storage.saveHomePage(updatedContent);
     setContent(updatedContent);
     setIsEditing(false);
   };
