@@ -35,7 +35,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && editForm) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setEditForm({ ...editForm, imageUrl: reader.result as string });
@@ -43,6 +43,14 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
       reader.readAsDataURL(file);
     }
   };
+
+  if (!content || !editForm) {
+    return (
+      <div className="flex justify-center items-center h-64 text-slate-500">
+        <p className="animate-pulse">Cargando portada...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 relative">

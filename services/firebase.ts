@@ -12,5 +12,18 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+let app;
+let db: ReturnType<typeof getFirestore>;
+
+try {
+  if (!firebaseConfig.apiKey) {
+    console.error("FIREBASE ERROR: API Key is missing. Check VITE_FIREBASE_API_KEY environment variable.");
+  }
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  console.log("Firebase initialized successfully.");
+} catch (error) {
+  console.error("FIREBASE INITIALIZATION ERROR:", error);
+}
+
+export { db };

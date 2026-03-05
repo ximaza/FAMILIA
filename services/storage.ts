@@ -58,13 +58,28 @@ initializeStorage();
 
 export const storage = {
   getUsers: async (): Promise<User[]> => {
-    const q = collection(db, USERS_COL);
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as User);
+    try {
+      console.log("Fetching users from Firestore...");
+      const q = collection(db, USERS_COL);
+      const snap = await getDocs(q);
+      console.log(`Fetched ${snap.docs.length} users.`);
+      return snap.docs.map(d => d.data() as User);
+    } catch (err) {
+      console.error("FIRESTORE ERROR GETTING USERS:", err);
+      alert("Error de conexión con la base de datos (getUsers). Abre la consola (F12) para ver detalles.");
+      return [];
+    }
   },
   
   saveUser: async (user: User): Promise<void> => {
-    await setDoc(doc(db, USERS_COL, user.id), user);
+    try {
+      console.log("Saving user to Firestore:", user.id);
+      await setDoc(doc(db, USERS_COL, user.id), user);
+      console.log("User saved successfully.");
+    } catch (err) {
+      console.error("FIRESTORE ERROR SAVING USER:", err);
+      alert("Error guardando usuario. Abre la consola (F12) para ver detalles.");
+    }
   },
 
   updateUser: async (updatedUser: User): Promise<void> => {
@@ -104,10 +119,16 @@ export const storage = {
   },
 
   login: async (email: string, password: string): Promise<User | undefined> => {
-    const users = await storage.getUsers();
-    return users.find(u => 
-      u.email.toLowerCase() === email.toLowerCase() && 
-      u.password === password
-    );
+    try {
+      const users = await storage.getUsers();
+      return users.find(u =>
+        u.email.toLowerCase() === email.toLowerCase() &&
+        u.password === password
+      );
+    } catch (err) {
+       console.error("FIRESTORE ERROR ON LOGIN:", err);
+       alert("Fallo crítico en Login. Revisa la consola.");
+       return undefined;
+    }
   }
 };
