@@ -1,5 +1,5 @@
 import { User, Notice, FamilyHistory } from '../types';
-import { db } from './firebase';
+import { getDb } from './firebase';
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
 
 const USERS_COL = 'users';
@@ -36,6 +36,7 @@ const seedHomePage: any = {
 // Initial setup to seed empty database
 export const initializeStorage = async () => {
   try {
+    const db = await getDb();
     const adminDoc = await getDoc(doc(db, USERS_COL, seedAdmin.id));
     if (!adminDoc.exists()) {
       await setDoc(doc(db, USERS_COL, seedAdmin.id), seedAdmin);
@@ -53,13 +54,14 @@ export const initializeStorage = async () => {
   }
 };
 
-// Wait for initialization (should ideally be done once at startup)
+// Start initialization gracefully in background (React components will await actual requests)
 initializeStorage();
 
 export const storage = {
   getUsers: async (): Promise<User[]> => {
     try {
       console.log("Fetching users from Firestore...");
+      const db = await getDb();
       const q = collection(db, USERS_COL);
       const snap = await getDocs(q);
       console.log(`Fetched ${snap.docs.length} users.`);
@@ -74,6 +76,7 @@ export const storage = {
   saveUser: async (user: User): Promise<void> => {
     try {
       console.log("Saving user to Firestore:", user.id);
+      const db = await getDb();
       await setDoc(doc(db, USERS_COL, user.id), user);
       console.log("User saved successfully.");
     } catch (err) {
@@ -83,38 +86,46 @@ export const storage = {
   },
 
   updateUser: async (updatedUser: User): Promise<void> => {
+    const db = await getDb();
     await updateDoc(doc(db, USERS_COL, updatedUser.id), { ...updatedUser });
   },
 
   deleteUser: async (userId: string): Promise<void> => {
+    const db = await getDb();
     await deleteDoc(doc(db, USERS_COL, userId));
   },
 
   getNotices: async (): Promise<Notice[]> => {
+    const db = await getDb();
     const q = query(collection(db, NOTICES_COL), orderBy('date', 'desc'));
     const snap = await getDocs(q);
     return snap.docs.map(d => d.data() as Notice);
   },
   
   addNotice: async (notice: Notice): Promise<void> => {
+    const db = await getDb();
     await setDoc(doc(db, NOTICES_COL, notice.id), notice);
   },
 
   getHistory: async (): Promise<FamilyHistory> => {
+    const db = await getDb();
     const d = await getDoc(doc(db, SYSTEM_COL, 'history'));
     return d.exists() ? (d.data() as FamilyHistory) : seedHistory;
   },
   
   saveHistory: async (history: FamilyHistory): Promise<void> => {
+    const db = await getDb();
     await setDoc(doc(db, SYSTEM_COL, 'history'), history);
   },
 
   getHomePage: async (): Promise<any> => {
+    const db = await getDb();
     const d = await getDoc(doc(db, SYSTEM_COL, 'homepage'));
     return d.exists() ? d.data() : seedHomePage;
   },
   
   saveHomePage: async (content: any): Promise<void> => {
+    const db = await getDb();
     await setDoc(doc(db, SYSTEM_COL, 'homepage'), content);
   },
 
