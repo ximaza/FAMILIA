@@ -13,6 +13,7 @@ export interface User {
   role: Role;
   status: 'active' | 'pending_approval' | 'rejected';
   registeredAt: string;
+  rejectedAt?: string;
 }
 
 export interface Notice {
