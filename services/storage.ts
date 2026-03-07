@@ -71,10 +71,12 @@ export const storage = {
   },
 
   login: async (email: string, password: string): Promise<User | undefined> => {
-    const users = await storage.getUsers();
-    return users.find(u => 
-      u.email.toLowerCase() === email.toLowerCase() && 
-      u.password === password
-    );
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (res.ok) return res.json();
+    return undefined;
   }
 };

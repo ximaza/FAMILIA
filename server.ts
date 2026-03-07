@@ -71,14 +71,44 @@ async function startServer() {
   };
 
   // API Routes
+  app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
+    let users = [];
+    if (db) {
+      const snapshot = await db.collection("users").get();
+      users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } else {
+      users = await readData("users.json");
+    }
+
+    const user = users.find((u: any) =>
+      u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+
+    if (user) {
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  });
+
   app.get("/api/users", async (req, res) => {
     if (db) {
       const snapshot = await db.collection("users").get();
-      const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const users = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const { password: _, ...safeData } = data;
+        return { id: doc.id, ...safeData };
+      });
       res.json(users);
     } else {
       const users = await readData("users.json");
-      res.json(users || []);
+      const safeUsers = (users || []).map((user: any) => {
+        const { password: _, ...safeUser } = user;
+        return safeUser;
+      });
+      res.json(safeUsers);
     }
   });
 
@@ -195,6 +225,10 @@ async function startServer() {
     const { email, name } = req.body;
     const config = getEmailConfig();
 
+    if (!config.user || !config.pass) {
+        return res.status(500).json({ error: "Email configuration missing" });
+    }
+
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
@@ -231,13 +265,17 @@ async function startServer() {
       res.json({ success: true, message: "Email sent successfully" });
     } catch (error) {
       console.error("Error sending email:", error);
-      res.status(500).json({ error: "Failed to send email", details: error });
+      res.status(500).json({ error: "Failed to send email" });
     }
   });
 
   app.post("/api/send-approval-email", async (req, res) => {
     const { email, name } = req.body;
     const config = getEmailConfig();
+
+    if (!config.user || !config.pass) {
+        return res.status(500).json({ error: "Email configuration missing" });
+    }
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
@@ -278,21 +316,39 @@ async function startServer() {
       res.json({ success: true, message: "Approval email sent successfully" });
     } catch (error) {
       console.error("Error sending approval email:", error);
-      res.status(500).json({ error: "Failed to send email", details: error });
+      res.status(500).json({ error: "Failed to send email" });
     }
   });
+
+  // Serve public directory
+  app.use(express.static(path.join(__dirname, "public")));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Changed to custom to handle SPA manually and allow other files
     });
     app.use(vite.middlewares);
+
+    // Development catch-all for SPA
+    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, async (req, res, next) => {
+      if (req.path.includes(".") || req.path.startsWith("/api/")) return next();
+      try {
+        const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
+        const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
+        res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   } else {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
-    app.get(/(.*)/, (req, res) => {
+
+    // Production catch-all for SPA
+    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
