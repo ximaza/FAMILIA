@@ -147,9 +147,6 @@ export const Login: React.FC = () => {
                         Solicitar Registro
                     </button>
                 </div>
-                <div className="text-xs text-center text-slate-400">
-                    * Primer acceso: <br/><strong>joaquin@maz.com</strong> / <strong>admin123</strong>
-                </div>
             </form>
         ) : (
             // Register Form
