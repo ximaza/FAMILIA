@@ -109,10 +109,5 @@ export const storage = {
       u.email.toLowerCase() === email.toLowerCase() && 
       u.password === password
     );
-  },
-
-  loginWithGoogle: (email: string): User | undefined => {
-    const users = storage.getUsers();
-    return users.find(u => u.email.toLowerCase() === email.toLowerCase());
   }
 };
