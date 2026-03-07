@@ -4,11 +4,33 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs/promises";
+import admin from "firebase-admin";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase
+let db: admin.firestore.Firestore | null = null;
+try {
+  if (process.env.FIREBASE_PROJECT_ID) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+    db = admin.firestore();
+    console.log("Firebase initialized successfully");
+  } else {
+    console.warn("Firebase credentials missing. Falling back to local JSON storage.");
+  }
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
+}
 
 async function startServer() {
   const app = express();
@@ -16,19 +38,196 @@ async function startServer() {
 
   // Helper to get clean credentials
   const getEmailConfig = () => {
-    // Hardcoding the values provided to ensure they are used exactly
-    const user = "camaraberango@gmail.com";
-    const pass = "nwnnoladpaxqqqid"; // Removed spaces for maximum compatibility
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
     
     return { user, pass };
   };
 
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
+
+  const DATA_DIR = path.join(__dirname, "data");
+
+  const readData = async (filename: string) => {
+    const filePath = path.join(DATA_DIR, filename);
+    try {
+      const data = await fs.readFile(filePath, "utf-8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.error(`Error reading ${filename}:`, error);
+      return null;
+    }
+  };
+
+  const writeData = async (filename: string, data: any) => {
+    const filePath = path.join(DATA_DIR, filename);
+    try {
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+      return true;
+    } catch (error) {
+      console.error(`Error writing ${filename}:`, error);
+      return false;
+    }
+  };
 
   // API Routes
+  app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
+    let users = [];
+    if (db) {
+      const snapshot = await db.collection("users").get();
+      users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } else {
+      users = await readData("users.json");
+    }
+
+    const user = users.find((u: any) =>
+      u.email.toLowerCase() === email.toLowerCase() && u.password === password
+    );
+
+    if (user) {
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  });
+
+  app.get("/api/users", async (req, res) => {
+    if (db) {
+      const snapshot = await db.collection("users").get();
+      const users = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const { password: _, ...safeData } = data;
+        return { id: doc.id, ...safeData };
+      });
+      res.json(users);
+    } else {
+      const users = await readData("users.json");
+      const safeUsers = (users || []).map((user: any) => {
+        const { password: _, ...safeUser } = user;
+        return safeUser;
+      });
+      res.json(safeUsers);
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    const newUser = req.body;
+    if (db) {
+      const { id, ...data } = newUser;
+      await db.collection("users").doc(id).set(data);
+      res.json(newUser);
+    } else {
+      const users = (await readData("users.json")) || [];
+      users.push(newUser);
+      await writeData("users.json", users);
+      res.json(newUser);
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    const updatedUser = req.body;
+    if (db) {
+      const { id: _, ...data } = updatedUser;
+      await db.collection("users").doc(id).set(data, { merge: true });
+      res.json(updatedUser);
+    } else {
+      let users = (await readData("users.json")) || [];
+      users = users.map((u: any) => u.id === id ? updatedUser : u);
+      await writeData("users.json", users);
+      res.json(updatedUser);
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    if (db) {
+      await db.collection("users").doc(id).delete();
+      res.json({ success: true });
+    } else {
+      let users = (await readData("users.json")) || [];
+      users = users.filter((u: any) => u.id !== id);
+      await writeData("users.json", users);
+      res.json({ success: true });
+    }
+  });
+
+  app.get("/api/notices", async (req, res) => {
+    if (db) {
+      const snapshot = await db.collection("notices").orderBy("date", "desc").get();
+      const notices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json(notices);
+    } else {
+      const notices = await readData("notices.json");
+      res.json(notices || []);
+    }
+  });
+
+  app.post("/api/notices", async (req, res) => {
+    const newNotice = req.body;
+    if (db) {
+      const { id, ...data } = newNotice;
+      await db.collection("notices").doc(id).set(data);
+      res.json(newNotice);
+    } else {
+      const notices = (await readData("notices.json")) || [];
+      notices.unshift(newNotice);
+      await writeData("notices.json", notices);
+      res.json(newNotice);
+    }
+  });
+
+  app.get("/api/history", async (req, res) => {
+    if (db) {
+      const doc = await db.collection("config").doc("history").get();
+      res.json(doc.exists ? doc.data() : null);
+    } else {
+      const history = await readData("history.json");
+      res.json(history);
+    }
+  });
+
+  app.post("/api/history", async (req, res) => {
+    const history = req.body;
+    if (db) {
+      await db.collection("config").doc("history").set(history);
+      res.json(history);
+    } else {
+      await writeData("history.json", history);
+      res.json(history);
+    }
+  });
+
+  app.get("/api/homepage", async (req, res) => {
+    if (db) {
+      const doc = await db.collection("config").doc("homepage").get();
+      res.json(doc.exists ? doc.data() : null);
+    } else {
+      const homepage = await readData("homepage.json");
+      res.json(homepage);
+    }
+  });
+
+  app.post("/api/homepage", async (req, res) => {
+    const homepage = req.body;
+    if (db) {
+      await db.collection("config").doc("homepage").set(homepage);
+      res.json(homepage);
+    } else {
+      await writeData("homepage.json", homepage);
+      res.json(homepage);
+    }
+  });
+
   app.post("/api/send-welcome-email", async (req, res) => {
     const { email, name } = req.body;
     const config = getEmailConfig();
+
+    if (!config.user || !config.pass) {
+        return res.status(500).json({ error: "Email configuration missing" });
+    }
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
@@ -66,13 +265,17 @@ async function startServer() {
       res.json({ success: true, message: "Email sent successfully" });
     } catch (error) {
       console.error("Error sending email:", error);
-      res.status(500).json({ error: "Failed to send email", details: error });
+      res.status(500).json({ error: "Failed to send email" });
     }
   });
 
   app.post("/api/send-approval-email", async (req, res) => {
     const { email, name } = req.body;
     const config = getEmailConfig();
+
+    if (!config.user || !config.pass) {
+        return res.status(500).json({ error: "Email configuration missing" });
+    }
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
@@ -113,21 +316,39 @@ async function startServer() {
       res.json({ success: true, message: "Approval email sent successfully" });
     } catch (error) {
       console.error("Error sending approval email:", error);
-      res.status(500).json({ error: "Failed to send email", details: error });
+      res.status(500).json({ error: "Failed to send email" });
     }
   });
+
+  // Serve public directory
+  app.use(express.static(path.join(__dirname, "public")));
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Changed to custom to handle SPA manually and allow other files
     });
     app.use(vite.middlewares);
+
+    // Development catch-all for SPA
+    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, async (req, res, next) => {
+      if (req.path.includes(".") || req.path.startsWith("/api/")) return next();
+      try {
+        const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
+        const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
+        res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   } else {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
-    app.get(/(.*)/, (req, res) => {
+
+    // Production catch-all for SPA
+    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }

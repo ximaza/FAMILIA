@@ -19,10 +19,10 @@ export const Notices: React.FC = () => {
   const [isDrafting, setIsDrafting] = useState(false);
 
   useEffect(() => {
-    setNotices(storage.getNotices());
+    storage.getNotices().then(setNotices);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
@@ -37,8 +37,9 @@ export const Notices: React.FC = () => {
       date: new Date().toISOString()
     };
 
-    storage.addNotice(newNotice);
-    setNotices(storage.getNotices());
+    await storage.addNotice(newNotice);
+    const updatedNotices = await storage.getNotices();
+    setNotices(updatedNotices);
     resetForm();
   };
 
