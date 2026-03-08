@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Familiares - Familia Mazarrasa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Crimson Pro', serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-slate-900 uppercase tracking-widest border-b-2 border-slate-200 inline-block pb-2">Panel de Control de Familiares</h1>
+            <p class="text-slate-500 mt-4 italic">Gestión directa de registros y estados conectados a Firestore.</p>
+        </header>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Solicitudes de Registro</h2>
+                <span id="counter" class="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold">0</span>
+            </div>
+
+            <div id="loading" class="p-12 text-center text-slate-400">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto mb-4"></div>
+                Sincronizando con el servidor...
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="user-table" class="w-full text-left hidden">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase font-bold">
+                        <tr>
+                            <th class="px-6 py-4">Familiar</th>
+                            <th class="px-6 py-4">Email</th>
+                            <th class="px-6 py-4">Estado</th>
+                            <th class="px-6 py-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-body" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="p-12 text-center text-slate-400 hidden">
+                No hay familiares registrados en el sistema.
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            <a href="/" class="text-slate-400 hover:text-slate-600 text-sm underline transition">Volver a la aplicación principal</a>
+        </div>
+    </div>
+
+    <script>
+        const adminId = localStorage.getItem('maz_current_user_id');
+
+        async function loadFamily() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('user-table');
+            const body = document.getElementById('user-body');
+            const empty = document.getElementById('empty-state');
+            const counter = document.getElementById('counter');
+
+            if (!adminId) {
+                alert("Debes iniciar sesión como administrador en la web principal primero.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users', {
+                    headers: { 'x-user-id': adminId }
+                });
+                const users = await response.json();
+
+                const pendingCount = users.filter(u => u.status === 'pending_approval').length;
+                counter.innerText = pendingCount;
+
+                loading.classList.add('hidden');
+
+                if (users.length === 0) {
+                    table.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                } else {
+                    empty.classList.add('hidden');
+                    table.classList.remove('hidden');
+                    body.innerHTML = '';
+
+                    // Order by pending first
+                    users.sort((a, b) => (a.status === 'pending_approval' ? -1 : 1));
+
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50 transition';
+
+                        let statusBadge = '';
+                        if (user.status === 'active') {
+                            statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">APROBADO</span>';
+                        } else if (user.status === 'pending_approval') {
+                            statusBadge = '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">PENDIENTE</span>';
+                        } else {
+                            statusBadge = '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">RECHAZADO</span>';
+                        }
+
+                        const actions = user.status === 'pending_approval' ? `
+                            <button onclick="processUser('${user.id}', 'rejected', '${user.firstName}')" class="text-red-600 hover:text-red-800 font-bold mr-4 transition text-sm">Rechazar</button>
+                            <button onclick="processUser('${user.id}', 'active', '${user.firstName}')" class="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-black transition shadow-md text-sm font-bold">Aprobar</button>
+                        ` : '<span class="text-slate-300 italic text-xs">Sin acciones</span>';
+
+                        tr.innerHTML = `
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-slate-800">${user.firstName}</div>
+                                <div class="text-[10px] text-slate-400 uppercase tracking-tighter">${user.surnames ? user.surnames.join(' ') : ''}</div>
+                            </td>
+                            <td class="px-6 py-4 text-slate-600 text-sm">${user.email}</td>
+                            <td class="px-6 py-4">${statusBadge}</td>
+                            <td class="px-6 py-4 text-right">${actions}</td>
+                        `;
+                        body.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loading.innerHTML = '<p class="text-red-500 font-bold">Error de comunicación con el servidor.</p>';
+            }
+        }
+
+        async function processUser(id, newStatus, name) {
+            const actionText = newStatus === 'active' ? 'APROBAR' : 'RECHAZAR';
+            if (!confirm(`¿Deseas ${actionText} a ${name}?`)) return;
+
+            try {
+                // Get full user data
+                const res = await fetch('/api/users', {
+                    headers: { 'x-user-id': adminId }
+                });
+                const users = await res.json();
+                const user = users.find(u => u.id === id);
+
+                const updated = { ...user, status: newStatus };
+
+                const updateRes = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-user-id': adminId
+                    },
+                    body: JSON.stringify(updated)
+                });
+
+                if (updateRes.ok) {
+                    if (newStatus === 'active') {
+                        fetch('/api/send-approval-email', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: user.email, name: user.firstName })
+                        });
+                    }
+                    loadFamily();
+                } else {
+                    alert('Error al actualizar en la base de datos.');
+                }
+            } catch (err) {
+                alert('Error de red.');
+            }
+        }
+
+        loadFamily();
+    </script>
+</body>
+</html>

@@ -9,18 +9,19 @@ export const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   
   useEffect(() => {
-    setUsers(storage.getUsers());
+    storage.getUsers().then(setUsers);
   }, []);
 
-  const handleAction = (userId: string, action: 'approve' | 'reject') => {
+  const handleAction = async (userId: string, action: 'approve' | 'reject') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
     const updatedUser: User = { 
         ...user, 
-        status: action === 'approve' ? 'active' : 'rejected' 
+        status: action === 'approve' ? 'active' : 'rejected',
+        rejectedAt: action === 'reject' ? new Date().toISOString() : user.rejectedAt
     };
-    storage.updateUser(updatedUser);
+    await storage.updateUser(updatedUser);
 
     // Send approval email if approved
     if (action === 'approve') {
@@ -35,21 +36,23 @@ export const AdminPanel: React.FC = () => {
     }
     
     // Refresh local list
-    setUsers(storage.getUsers());
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
-  const handleDelete = (userId: string, userName: string) => {
+  const handleDelete = async (userId: string, userName: string) => {
       if (userId === currentUser?.id) {
           alert("No puedes eliminar tu propia cuenta mientras estás conectado.");
           return;
       }
       if (window.confirm(`¿Estás seguro de que quieres ELIMINAR definitivamente a ${userName}? Esta acción no se puede deshacer.`)) {
-          storage.deleteUser(userId);
-          setUsers(storage.getUsers());
+          await storage.deleteUser(userId);
+          const updatedUsers = await storage.getUsers();
+          setUsers(updatedUsers);
       }
   };
 
-  const handleRoleChange = (userId: string, newRole: Role) => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     if (userId === currentUser?.id) {
         alert("No puedes modificar tu propio rol.");
         return;
@@ -65,12 +68,14 @@ export const AdminPanel: React.FC = () => {
     }
 
     const updatedUser: User = { ...user, role: newRole };
-    storage.updateUser(updatedUser);
-    setUsers(storage.getUsers());
+    await storage.updateUser(updatedUser);
+    const updatedUsers = await storage.getUsers();
+    setUsers(updatedUsers);
   };
 
   const pendingUsers = users.filter(u => u.status === 'pending_approval');
   const activeUsers = users.filter(u => u.status === 'active');
+  const rejectedUsers = users.filter(u => u.status === 'rejected');
 
   if (currentUser?.role !== 'admin') {
       return <div className="p-4 text-red-600">Acceso Denegado.</div>;
@@ -93,26 +98,37 @@ export const AdminPanel: React.FC = () => {
                 {pendingUsers.map(user => (
                     <li key={user.id} className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames.join(' ')}</p>
+                            <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames?.join(' ') || ''}</p>
                             <div className="text-sm text-slate-600 space-y-1 mt-1">
                                 <p>Email: {user.email}</p>
                                 <p>Padres: {user.parentsNames}</p>
-                                <p>Fecha Nacimiento: {new Date(user.birthDate).toLocaleDateString()}</p>
+
+                                <p>Fecha Nacimiento: {user.birthDate ? new Date(user.birthDate).toLocaleDateString() : 'N/A'}</p>
+                                <p>Registrado: {user.registeredAt ? new Date(user.registeredAt).toLocaleString() : 'N/A'}</p>
                                 <p className="text-amber-700 font-medium">Contraseña: {user.password || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
                             <button 
                                 onClick={() => handleAction(user.id, 'reject')}
-                                className="flex items-center gap-1 px-3 py-2 border border-red-200 text-red-700 rounded hover:bg-red-50 transition"
+                                className="flex items-center gap-1 px-3 py-2 border border-amber-200 text-amber-700 rounded hover:bg-amber-50 transition"
+                                title="Rechazar solicitud"
                             >
                                 <X size={16} /> Rechazar
                             </button>
                             <button 
                                 onClick={() => handleAction(user.id, 'approve')}
                                 className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition shadow-sm"
+                                title="Aprobar solicitud"
                             >
                                 <Check size={16} /> Aprobar
+                            </button>
+                            <button
+                                onClick={() => handleDelete(user.id, user.firstName)}
+                                className="flex items-center gap-1 px-3 py-2 border border-red-200 text-red-700 rounded hover:bg-red-50 transition"
+                                title="Eliminar solicitud"
+                            >
+                                <Trash2 size={16} /> Eliminar
                             </button>
                         </div>
                     </li>
@@ -120,6 +136,42 @@ export const AdminPanel: React.FC = () => {
             </ul>
         )}
       </div>
+
+      {rejectedUsers.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-family-200 overflow-hidden">
+            <div className="bg-red-50 p-4 border-b border-red-100 flex items-center gap-2">
+                <X className="text-red-600" size={20}/>
+                <h3 className="text-lg font-bold text-red-800">Solicitudes Rechazadas ({rejectedUsers.length})</h3>
+            </div>
+            <ul className="divide-y divide-slate-100">
+                {rejectedUsers.map(user => (
+                    <li key={user.id} className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames?.join(' ') || ''}</p>
+                            <div className="text-sm text-slate-600 space-y-1 mt-1">
+                                <p>Email: {user.email}</p>
+                                <p>Fecha Rechazo: {user.rejectedAt ? new Date(user.rejectedAt).toLocaleString() : 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleAction(user.id, 'approve')}
+                                className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition shadow-sm"
+                            >
+                                <Check size={16} /> Aprobar de nuevo
+                            </button>
+                            <button
+                                onClick={() => handleDelete(user.id, user.firstName)}
+                                className="flex items-center gap-1 px-3 py-2 border border-red-200 text-red-700 rounded hover:bg-red-50 transition"
+                            >
+                                <Trash2 size={16} /> Eliminar Definitivamente
+                            </button>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-family-200 overflow-hidden">
         <div className="bg-slate-50 p-4 border-b border-slate-100">
@@ -141,7 +193,7 @@ export const AdminPanel: React.FC = () => {
                     {activeUsers.map(user => (
                         <tr key={user.id} className="hover:bg-slate-50">
                             <td className="p-4 text-slate-900">{user.firstName}</td>
-                            <td className="p-4 text-slate-600">{user.surnames.join(' ')}</td>
+                            <td className="p-4 text-slate-600">{user.surnames?.join(' ') || ''}</td>
                             <td className="p-4 text-slate-600">{user.email}</td>
                             <td className="p-4 text-slate-500 font-mono text-xs">{user.password || 'N/A'}</td>
                             <td className="p-4">

@@ -7,26 +7,34 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (user: User) => Promise<void>;
   logout: () => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is persisted in session (simplified)
-    const storedId = localStorage.getItem('maz_current_user_id');
-    if (storedId) {
-      const users = storage.getUsers();
-      const user = users.find(u => u.id === storedId);
-      if (user) setCurrentUser(user);
-    }
+    const initAuth = async () => {
+      const storedId = localStorage.getItem('maz_current_user_id');
+      if (storedId) {
+        try {
+          const users = await storage.getUsers();
+          const user = users.find(u => u.id === storedId);
+          if (user) setCurrentUser(user);
+        } catch (error) {
+          console.error("Error initializing auth:", error);
+        }
+      }
+      setIsLoading(false);
+    };
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const user = storage.login(email, password);
+    const user = await storage.login(email, password);
     if (user) {
       if (user.status === 'rejected') {
          alert('Su cuenta ha sido rechazada por el administrador.');
@@ -44,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (newUser: User) => {
-    storage.saveUser(newUser);
+    await storage.saveUser(newUser);
     // Auto login is disabled because approval is needed, unless it's the first admin seed
     if (newUser.role === 'admin') {
         setCurrentUser(newUser);
@@ -57,13 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('maz_current_user_id');
   };
 
-  const refreshUser = () => {
+  const refreshUser = async () => {
       if (currentUser) {
-          const users = storage.getUsers();
+          const users = await storage.getUsers();
           const refreshed = users.find(u => u.id === currentUser.id);
           if (refreshed) setCurrentUser(refreshed);
       }
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ currentUser, login, register, logout, refreshUser }}>
