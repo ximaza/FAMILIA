@@ -54,8 +54,6 @@
     </div>
 
     <script>
-        const adminId = localStorage.getItem('maz_current_user_id');
-
         async function loadFamily() {
             const loading = document.getElementById('loading');
             const table = document.getElementById('user-table');
@@ -63,15 +61,8 @@
             const empty = document.getElementById('empty-state');
             const counter = document.getElementById('counter');
 
-            if (!adminId) {
-                alert("Debes iniciar sesión como administrador en la web principal primero.");
-                return;
-            }
-
             try {
-                const response = await fetch('/api/users', {
-                    headers: { 'x-user-id': adminId }
-                });
+                const response = await fetch('/api/users');
                 const users = await response.json();
 
                 const pendingCount = users.filter(u => u.status === 'pending_approval').length;
@@ -132,9 +123,7 @@
 
             try {
                 // Get full user data
-                const res = await fetch('/api/users', {
-                    headers: { 'x-user-id': adminId }
-                });
+                const res = await fetch('/api/users');
                 const users = await res.json();
                 const user = users.find(u => u.id === id);
 
@@ -142,10 +131,7 @@
 
                 const updateRes = await fetch(`/api/users/${id}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-user-id': adminId
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updated)
                 });
 
