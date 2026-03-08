@@ -98,6 +98,7 @@ export const AdminPanel: React.FC = () => {
                                 <p>Email: {user.email}</p>
                                 <p>Padres: {user.parentsNames}</p>
                                 <p>Fecha Nacimiento: {new Date(user.birthDate).toLocaleDateString()}</p>
+                                <p className="text-amber-700 font-medium">Contraseña: {user.password || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -131,6 +132,7 @@ export const AdminPanel: React.FC = () => {
                         <th className="p-4 font-medium">Nombre</th>
                         <th className="p-4 font-medium">Apellidos</th>
                         <th className="p-4 font-medium">Email</th>
+                        <th className="p-4 font-medium">Contraseña</th>
                         <th className="p-4 font-medium">Rol</th>
                         <th className="p-4 font-medium text-right">Acciones</th>
                     </tr>
@@ -141,6 +143,7 @@ export const AdminPanel: React.FC = () => {
                             <td className="p-4 text-slate-900">{user.firstName}</td>
                             <td className="p-4 text-slate-600">{user.surnames.join(' ')}</td>
                             <td className="p-4 text-slate-600">{user.email}</td>
+                            <td className="p-4 text-slate-500 font-mono text-xs">{user.password || 'N/A'}</td>
                             <td className="p-4">
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
                                     {user.role === 'admin' ? 'Administrador' : 'Miembro'}
