@@ -24,14 +24,27 @@ export const AdminPanel: React.FC = () => {
 
     // Send approval email if approved
     if (action === 'approve') {
-        fetch('/api/send-approval-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email: user.email, 
-                name: user.firstName 
-            })
-        }).catch(err => console.error("Error sending approval email:", err));
+        try {
+            // Use absolute URL to prevent issues in production
+            const currentOrigin = window.location.origin;
+            const response = await fetch(`${currentOrigin}/api/send-approval-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: user.email,
+                    name: user.firstName
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                console.error("Server rejected email send:", errData);
+                alert(`El usuario fue aprobado, pero falló el envío del correo de confirmación a ${user.email}.`);
+            }
+        } catch (err) {
+            console.error("Network error sending approval email:", err);
+            alert(`Error de red al intentar enviar el correo a ${user.email}. Revisa la consola.`);
+        }
     }
     
     // Refresh local list
