@@ -16,28 +16,32 @@ export const AdminPanel: React.FC = () => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
-    const updatedUser: User = { 
-        ...user, 
-        status: action === 'approve' ? 'active' : 'rejected',
-        rejectedAt: action === 'reject' ? new Date().toISOString() : user.rejectedAt
-    };
-    await storage.updateUser(updatedUser);
+    try {
+        const updatedUser: User = {
+            ...user,
+            status: action === 'approve' ? 'active' : 'rejected',
+            rejectedAt: action === 'reject' ? new Date().toISOString() : user.rejectedAt
+        };
+        await storage.updateUser(updatedUser);
 
-    // Send approval email if approved
-    if (action === 'approve') {
-        fetch('/api/send-approval-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email: user.email, 
-                name: user.firstName 
-            })
-        }).catch(err => console.error("Error sending approval email:", err));
+        // Send approval email if approved
+        if (action === 'approve') {
+            fetch('/api/send-approval-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: user.email,
+                    name: user.firstName
+                })
+            }).catch(err => console.error("Error sending approval email:", err));
+        }
+
+        // Refresh local list
+        const updatedUsers = await storage.getUsers();
+        setUsers(updatedUsers);
+    } catch (e: any) {
+        alert("Error actualizando usuario: " + e.message);
     }
-    
-    // Refresh local list
-    const updatedUsers = await storage.getUsers();
-    setUsers(updatedUsers);
   };
 
   const handleDelete = async (userId: string, userName: string) => {
@@ -46,9 +50,13 @@ export const AdminPanel: React.FC = () => {
           return;
       }
       if (window.confirm(`¿Estás seguro de que quieres ELIMINAR definitivamente a ${userName}? Esta acción no se puede deshacer.`)) {
-          await storage.deleteUser(userId);
-          const updatedUsers = await storage.getUsers();
-          setUsers(updatedUsers);
+          try {
+              await storage.deleteUser(userId);
+              const updatedUsers = await storage.getUsers();
+              setUsers(updatedUsers);
+          } catch (e: any) {
+              alert("Error eliminando usuario: " + e.message);
+          }
       }
   };
 

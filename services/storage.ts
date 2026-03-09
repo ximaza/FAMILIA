@@ -15,6 +15,7 @@ export const storage = {
     const res = await fetch('/api/users', {
       headers: getAuthHeaders()
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
   
@@ -24,6 +25,7 @@ export const storage = {
       headers: getAuthHeaders(),
       body: JSON.stringify(user)
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
@@ -33,6 +35,7 @@ export const storage = {
       headers: getAuthHeaders(),
       body: JSON.stringify(updatedUser)
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
@@ -45,6 +48,7 @@ export const storage = {
 
   getNotices: async (): Promise<Notice[]> => {
     const res = await fetch('/api/notices');
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
   
@@ -54,11 +58,13 @@ export const storage = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(notice)
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   getHistory: async (): Promise<FamilyHistory> => {
     const res = await fetch('/api/history');
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
   
@@ -68,11 +74,13 @@ export const storage = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(history)
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   getHomePage: async (): Promise<HomePageContent> => {
     const res = await fetch('/api/homepage');
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
   
@@ -82,6 +90,7 @@ export const storage = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(content)
     });
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
@@ -91,6 +100,7 @@ export const storage = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
+    if (!res.ok) throw new Error(await res.text());
     if (res.ok) return res.json();
     return undefined;
   }

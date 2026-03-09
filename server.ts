@@ -116,20 +116,28 @@ async function startServer() {
     const requestingUserId = req.headers['x-user-id'] as string;
     const targetUserId = req.params.id;
 
+    console.log(`[isAuthorizedToModify] Requesting: ${requestingUserId}, Target: ${targetUserId}, Method: ${req.method}`);
+
     if (!requestingUserId) {
-        return res.status(401).json({ error: "Unauthorized" });
+        console.log(`[isAuthorizedToModify] REJECTED 401: No x-user-id header`);
+        return res.status(401).json({ error: "Unauthorized: Missing header" });
     }
 
     if (requestingUserId === targetUserId) {
-        return next(); // User modifying their own record
+        console.log(`[isAuthorizedToModify] ALLOWED: Self modification`);
+        return next();
     }
 
     const role = await getUserRole(requestingUserId);
+    console.log(`[isAuthorizedToModify] Retrieved role for ${requestingUserId}: ${role}`);
+
     if (role === 'admin') {
-        return next(); // Admin modifying any record
+        console.log(`[isAuthorizedToModify] ALLOWED: Admin modification`);
+        return next();
     }
 
-    return res.status(403).json({ error: "Forbidden" });
+    console.log(`[isAuthorizedToModify] REJECTED 403: Role is not admin`);
+    return res.status(403).json({ error: "Forbidden: Not admin" });
   };
 
   app.get("/api/users", async (req, res) => {
