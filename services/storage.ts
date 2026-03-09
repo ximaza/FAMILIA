@@ -2,15 +2,10 @@ import { User, Notice, FamilyHistory, HomePageContent } from '../types';
 
 
 const getAuthHeaders = () => {
-  const userStr = localStorage.getItem('maz_current_user');
+  const userId = localStorage.getItem('maz_current_user_id');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      if (user && user.id) {
-        headers['x-user-id'] = user.id;
-      }
-    } catch (e) {}
+  if (userId) {
+    headers['x-user-id'] = userId;
   }
   return headers;
 };
