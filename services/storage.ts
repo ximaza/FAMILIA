@@ -1,15 +1,32 @@
 import { User, Notice, FamilyHistory, HomePageContent } from '../types';
 
+
+const getAuthHeaders = () => {
+  const userStr = localStorage.getItem('maz_current_user');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user && user.id) {
+        headers['x-user-id'] = user.id;
+      }
+    } catch (e) {}
+  }
+  return headers;
+};
+
 export const storage = {
   getUsers: async (): Promise<User[]> => {
-    const res = await fetch('/api/users');
+    const res = await fetch('/api/users', {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
   
   saveUser: async (user: User): Promise<User> => {
     const res = await fetch('/api/users', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(user)
     });
     return res.json();
@@ -18,14 +35,17 @@ export const storage = {
   updateUser: async (updatedUser: User): Promise<User> => {
     const res = await fetch(`/api/users/${updatedUser.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updatedUser)
     });
     return res.json();
   },
 
   deleteUser: async (userId: string): Promise<void> => {
-    await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+    await fetch(`/api/users/${userId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
   },
 
   getNotices: async (): Promise<Notice[]> => {
