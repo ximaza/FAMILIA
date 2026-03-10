@@ -91,7 +91,7 @@ export const AdminPanel: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-serif font-bold text-family-900 border-b border-family-200 pb-4">Administración</h2>
+      <h2 className="text-3xl font-serif font-bold text-family-900 border-b border-family-200 pb-4">Administración (MODO DETECTIVE 🕵️)</h2>
 
       <div className="bg-white rounded-xl shadow-sm border border-family-200 overflow-hidden">
         <div className="bg-amber-50 p-4 border-b border-amber-100 flex items-center gap-2">
