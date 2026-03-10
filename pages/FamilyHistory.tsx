@@ -13,13 +13,14 @@ export const FamilyHistory: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const data = storage.getHistory();
-    setHistory(data);
-    setEditContent(data.content);
-    setEditImages(data.images || []);
+    storage.getHistory().then(data => {
+        setHistory(data);
+        setEditContent(data.content);
+        setEditImages(data.images || []);
+    });
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser) return;
     const newHistory: FamilyHistoryType = {
         content: editContent,
@@ -27,7 +28,7 @@ export const FamilyHistory: React.FC = () => {
         lastUpdated: new Date().toISOString(),
         updatedBy: currentUser.firstName
     };
-    storage.saveHistory(newHistory);
+    await storage.saveHistory(newHistory);
     setHistory(newHistory);
     setIsEditing(false);
   };
