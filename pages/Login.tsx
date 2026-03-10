@@ -147,6 +147,7 @@ export const Login: React.FC = () => {
                         Solicitar Registro
                     </button>
                 </div>
+
             </form>
         ) : (
             // Register Form
