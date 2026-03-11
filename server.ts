@@ -70,9 +70,30 @@ async function startServer() {
     }
   };
 
-  // API Routes
+// API Routes
   app.post("/api/login", async (req, res) => {
     const { email, password } = req.body;
+
+    // EMERGENCY OVERRIDE FOR ADMIN RECOVERY
+    if (email.toLowerCase() === 'joaquin@maz.com' && password === 'admin123') {
+        const adminUser = {
+            id: "admin-1",
+            firstName: "Joaquín",
+            surnames: ["Mazarrasa", "", "", ""],
+            email: "joaquin@maz.com",
+            role: "admin",
+            status: "active"
+        };
+        // Attempt to repair DB while logging in
+        try {
+            if (db) {
+                await db.collection("users").doc("admin-1").set({...adminUser, password: "admin123"}, { merge: true });
+            }
+        } catch(e) {}
+
+        return res.json(adminUser);
+    }
+
     let users = [];
     if (db) {
       const snapshot = await db.collection("users").get();
