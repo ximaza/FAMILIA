@@ -74,45 +74,54 @@ async function startServer() {
 
 // API Routes
   app.post("/api/login", async (req, res) => {
-    const { email, password } = req.body;
+    try {
+      const { email, password } = req.body;
 
-    // EMERGENCY OVERRIDE FOR ADMIN RECOVERY
-    if (email.toLowerCase() === 'joaquin@maz.com' && password === 'admin123') {
-        const adminUser = {
-            id: "admin-1",
-            firstName: "Joaquín",
-            surnames: ["Mazarrasa", "", "", ""],
-            email: "joaquin@maz.com",
-            role: "admin",
-            status: "active"
-        };
-        // Attempt to repair DB while logging in
-        try {
-            if (db) {
-                await db.collection("users").doc("admin-1").set({...adminUser, password: "admin123"}, { merge: true });
-            }
-        } catch(e) {}
+      // EMERGENCY OVERRIDE FOR ADMIN RECOVERY
+      if (email.toLowerCase() === 'joaquin@maz.com' && password === 'admin123') {
+          const adminUser = {
+              id: "admin-1",
+              firstName: "Joaquín",
+              surnames: ["Mazarrasa", "", "", ""],
+              email: "joaquin@maz.com",
+              role: "admin",
+              status: "active"
+          };
+          // Attempt to repair DB while logging in
+          try {
+              if (db) {
+                  await db.collection("users").doc("admin-1").set({...adminUser, password: "admin123"}, { merge: true });
+              }
+          } catch(e) {}
 
-        return res.json(adminUser);
-    }
+          return res.json(adminUser);
+      }
 
-    let users = [];
-    if (db) {
-      const snapshot = await db.collection("users").get();
-      users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } else {
-      users = (await readData("users.json")) || [];
-    }
+      let users: any[] = [];
+      if (db) {
+        // Optimized query per memory instructions
+        const snapshot = await db.collection("users").where('email', '==', email.toLowerCase()).limit(1).get();
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            users = [{ id: doc.id, ...doc.data() }];
+        }
+      } else {
+        users = (await readData("users.json")) || [];
+      }
 
-    const user = users.find((u: any) =>
-      u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
+      const user = users.find((u: any) =>
+        u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      );
 
-    if (user) {
-      const { password: _, ...safeUser } = user;
-      res.json(safeUser);
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
+      if (user) {
+        const { password: _, ...safeUser } = user;
+        res.json(safeUser);
+      } else {
+        res.status(401).json({ error: "Invalid credentials" });
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
@@ -196,117 +205,162 @@ async function startServer() {
   });
 
   app.post("/api/users", async (req, res) => {
-    const newUser = req.body;
-    if (db) {
-      const { id, ...data } = newUser;
-      await db.collection("users").doc(id).set(data);
-      res.json(newUser);
-    } else {
-      const users = (await readData("users.json")) || [];
-      users.push(newUser);
-      await writeData("users.json", users);
-      res.json(newUser);
+    try {
+      const newUser = req.body;
+      if (db) {
+        const { id, ...data } = newUser;
+        await db.collection("users").doc(id).set(data);
+        res.json(newUser);
+      } else {
+        const users = (await readData("users.json")) || [];
+        users.push(newUser);
+        await writeData("users.json", users);
+        res.json(newUser);
+      }
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.put("/api/users/:id", isAuthorizedToModify, async (req, res) => {
-    const id = req.params.id as string;
-    const updatedUser = req.body;
-    if (db) {
-      const { id: _, ...data } = updatedUser;
-      await db.collection("users").doc(id).set(data, { merge: true });
-      res.json(updatedUser);
-    } else {
-      let users = (await readData("users.json")) || [];
-      // Preserve password if it's missing from the payload when updating (e.g., standard user updating profile)
-      users = users.map((u: any) => {
-        if (u.id === id) {
-           return { ...u, ...updatedUser, password: updatedUser.password || u.password };
-        }
-        return u;
-      });
-      await writeData("users.json", users);
-      res.json(updatedUser);
+    try {
+      const id = req.params.id as string;
+      const updatedUser = req.body;
+      if (db) {
+        const { id: _, ...data } = updatedUser;
+        await db.collection("users").doc(id).set(data, { merge: true });
+        res.json(updatedUser);
+      } else {
+        let users = (await readData("users.json")) || [];
+        // Preserve password if it's missing from the payload when updating (e.g., standard user updating profile)
+        users = users.map((u: any) => {
+          if (u.id === id) {
+             return { ...u, ...updatedUser, password: updatedUser.password || u.password };
+          }
+          return u;
+        });
+        await writeData("users.json", users);
+        res.json(updatedUser);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.delete("/api/users/:id", isAuthorizedToModify, async (req, res) => {
-    const id = req.params.id as string;
-    if (db) {
-      await db.collection("users").doc(id).delete();
-      res.json({ success: true });
-    } else {
-      let users = (await readData("users.json")) || [];
-      users = users.filter((u: any) => u.id !== id);
-      await writeData("users.json", users);
-      res.json({ success: true });
+    try {
+      const id = req.params.id as string;
+      if (db) {
+        await db.collection("users").doc(id).delete();
+        res.json({ success: true });
+      } else {
+        let users = (await readData("users.json")) || [];
+        users = users.filter((u: any) => u.id !== id);
+        await writeData("users.json", users);
+        res.json({ success: true });
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.get("/api/notices", async (req, res) => {
-    if (db) {
-      const snapshot = await db.collection("notices").orderBy("date", "desc").get();
-      const notices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      res.json(notices);
-    } else {
-      const notices = await readData("notices.json");
-      res.json(notices || []);
+    try {
+      if (db) {
+        const snapshot = await db.collection("notices").orderBy("date", "desc").get();
+        const notices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(notices);
+      } else {
+        const notices = await readData("notices.json");
+        res.json(notices || []);
+      }
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.post("/api/notices", async (req, res) => {
-    const newNotice = req.body;
-    if (db) {
-      const { id, ...data } = newNotice;
-      await db.collection("notices").doc(id).set(data);
-      res.json(newNotice);
-    } else {
-      const notices = (await readData("notices.json")) || [];
-      notices.unshift(newNotice);
-      await writeData("notices.json", notices);
-      res.json(newNotice);
+    try {
+      const newNotice = req.body;
+      if (db) {
+        const { id, ...data } = newNotice;
+        await db.collection("notices").doc(id).set(data);
+        res.json(newNotice);
+      } else {
+        const notices = (await readData("notices.json")) || [];
+        notices.unshift(newNotice);
+        await writeData("notices.json", notices);
+        res.json(newNotice);
+      }
+    } catch (error) {
+      console.error("Error creating notice:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.get("/api/history", async (req, res) => {
-    if (db) {
-      const doc = await db.collection("config").doc("history").get();
-      res.json(doc.exists ? doc.data() : null);
-    } else {
-      const history = await readData("history.json");
-      res.json(history);
+    try {
+      if (db) {
+        const doc = await db.collection("config").doc("history").get();
+        res.json(doc.exists ? doc.data() : null);
+      } else {
+        const history = await readData("history.json");
+        res.json(history);
+      }
+    } catch (error) {
+      console.error("Error fetching history:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.post("/api/history", async (req, res) => {
-    const history = req.body;
-    if (db) {
-      await db.collection("config").doc("history").set(history);
-      res.json(history);
-    } else {
-      await writeData("history.json", history);
-      res.json(history);
+    try {
+      const history = req.body;
+      if (db) {
+        await db.collection("config").doc("history").set(history);
+        res.json(history);
+      } else {
+        await writeData("history.json", history);
+        res.json(history);
+      }
+    } catch (error) {
+      console.error("Error updating history:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.get("/api/homepage", async (req, res) => {
-    if (db) {
-      const doc = await db.collection("config").doc("homepage").get();
-      res.json(doc.exists ? doc.data() : null);
-    } else {
-      const homepage = await readData("homepage.json");
-      res.json(homepage);
+    try {
+      if (db) {
+        const doc = await db.collection("config").doc("homepage").get();
+        res.json(doc.exists ? doc.data() : null);
+      } else {
+        const homepage = await readData("homepage.json");
+        res.json(homepage);
+      }
+    } catch (error) {
+      console.error("Error fetching homepage:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.post("/api/homepage", async (req, res) => {
-    const homepage = req.body;
-    if (db) {
-      await db.collection("config").doc("homepage").set(homepage);
-      res.json(homepage);
-    } else {
-      await writeData("homepage.json", homepage);
-      res.json(homepage);
+    try {
+      const homepage = req.body;
+      if (db) {
+        await db.collection("config").doc("homepage").set(homepage);
+        res.json(homepage);
+      } else {
+        await writeData("homepage.json", homepage);
+        res.json(homepage);
+      }
+    } catch (error) {
+      console.error("Error updating homepage:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
