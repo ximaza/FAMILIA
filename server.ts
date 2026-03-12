@@ -55,7 +55,9 @@ async function startServer() {
       return JSON.parse(data);
     } catch (error) {
       console.error(`Error reading ${filename}:`, error);
-      return null;
+      // Return empty array for known array files, empty object for others
+      if (filename.includes('users') || filename.includes('notices')) return [];
+      return {};
     }
   };
 
@@ -99,7 +101,7 @@ async function startServer() {
       const snapshot = await db.collection("users").get();
       users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } else {
-      users = await readData("users.json");
+      users = (await readData("users.json")) || [];
     }
 
     const user = users.find((u: any) =>
@@ -122,7 +124,7 @@ async function startServer() {
         const doc = await db.collection("users").doc(userId).get();
         if (doc.exists) return doc.data()?.role || null;
       } else {
-        const users = await readData("users.json");
+        const users = (await readData("users.json")) || [];
         const user = (users || []).find((u: any) => u.id === userId);
         if (user) return user.role;
       }
