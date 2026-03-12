@@ -1,40 +1,66 @@
 import re
 
-with open("server.ts", "r") as f:
+with open('server.ts', 'r') as f:
     content = f.read()
 
-# Add logging to isAuthorizedToModify
-logged_auth = """
-  const isAuthorizedToModify = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const requestingUserId = req.headers['x-user-id'] as string;
-    const targetUserId = req.params.id;
+# Fix the catch-all routing order issue.
+# In express, static middleware handles files that exist.
+# Our API routes are defined earlier, so they are matched correctly.
+# But there might be a problem with Vite middleware in production.
+# Let's completely rework the static serving to be foolproof.
 
-    console.log(`[isAuthorizedToModify] Requesting: ${requestingUserId}, Target: ${targetUserId}, Method: ${req.method}`);
+new_server_tail = """
+  // Serve public directory
+  app.use(express.static(path.join(__dirname, "public")));
 
-    if (!requestingUserId) {
-        console.log(`[isAuthorizedToModify] REJECTED 401: No x-user-id header`);
-        return res.status(401).json({ error: "Unauthorized: Missing header" });
-    }
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "custom",
+    });
+    app.use(vite.middlewares);
 
-    if (requestingUserId === targetUserId) {
-        console.log(`[isAuthorizedToModify] ALLOWED: Self modification`);
-        return next();
-    }
+    // Development catch-all for SPA
+    app.get("*", async (req, res, next) => {
+      // Ignore API routes and direct files
+      if (req.path.startsWith("/api/")) return next();
+      if (req.path.includes(".")) return next();
 
-    const role = await getUserRole(requestingUserId);
-    console.log(`[isAuthorizedToModify] Retrieved role for ${requestingUserId}: ${role}`);
+      try {
+        const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
+        const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
+        res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
+  } else {
+    // Serve static files in production
+    app.use(express.static(path.join(__dirname, "dist")));
 
-    if (role === 'admin') {
-        console.log(`[isAuthorizedToModify] ALLOWED: Admin modification`);
-        return next();
-    }
+    // Production catch-all for SPA
+    app.get("*", (req, res, next) => {
+      // Ignore API routes
+      if (req.path.startsWith("/api/")) return next();
 
-    console.log(`[isAuthorizedToModify] REJECTED 403: Role is not admin`);
-    return res.status(403).json({ error: "Forbidden: Not admin" });
-  };
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
 """
 
-content = re.sub(r'const isAuthorizedToModify = async \([\s\S]*?return res\.status\(403\)\.json\(\{ error: "Forbidden" \}\);\n  \};', logged_auth.strip(), content)
+# Replace from `// Serve public directory` to the end
+content = re.sub(r'  // Serve public directory.*', new_server_tail, content, flags=re.DOTALL)
 
-with open("server.ts", "w") as f:
+with open('server.ts', 'w') as f:
     f.write(content)
+
+print("Patched server.ts routing")

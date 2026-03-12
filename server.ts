@@ -409,6 +409,7 @@ async function startServer() {
     }
   });
 
+
   // Serve public directory
   app.use(express.static(path.join(__dirname, "public")));
 
@@ -416,13 +417,16 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "custom", // Changed to custom to handle SPA manually and allow other files
+      appType: "custom",
     });
     app.use(vite.middlewares);
 
     // Development catch-all for SPA
-    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, async (req, res, next) => {
-      if (req.path.includes(".") || req.path.startsWith("/api/")) return next();
+    app.use(async (req, res, next) => {
+      // Ignore API routes and direct files
+      if (req.path.startsWith("/api/")) return next();
+      if (req.path.includes(".")) return next();
+
       try {
         const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
         const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
@@ -437,7 +441,10 @@ async function startServer() {
     app.use(express.static(path.join(__dirname, "dist")));
 
     // Production catch-all for SPA
-    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
+    app.use((req, res, next) => {
+      // Ignore API routes
+      if (req.path.startsWith("/api/")) return next();
+
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
