@@ -474,9 +474,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
 
-    // Development catch-all for SPA
-    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, async (req, res, next) => {
-      if (req.path.includes(".") || req.path.startsWith("/api/")) return next();
+// Development catch-all for SPA
+    app.use(async (req, res, next) => {
+      if (req.path.startsWith("/api/")) return next();
+      if (req.path.includes(".")) return next();
       try {
         const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
         const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
@@ -490,8 +491,9 @@ async function startServer() {
     // Serve static files in production
     app.use(express.static(path.join(__dirname, "dist")));
 
-    // Production catch-all for SPA
-    app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
+// Production catch-all for SPA
+    app.use((req, res, next) => {
+      if (req.path.startsWith("/api/")) return next();
       res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
   }
