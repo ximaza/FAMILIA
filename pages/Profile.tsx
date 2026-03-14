@@ -16,9 +16,22 @@ export const Profile: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleSave = async () => {
+const handleSave = async () => {
     if (!currentUser || !formData.id) return;
     
+    let passToUpdate = currentUser.password;
+    if (newPassword || confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        setPasswordError('Las contraseñas no coinciden');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setPasswordError('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      passToUpdate = newPassword;
+    }
+
     const updatedUser: User = {
         ...currentUser,
         firstName: formData.firstName || currentUser.firstName,
@@ -27,6 +40,7 @@ export const Profile: React.FC = () => {
         parentsNames: formData.parentsNames || currentUser.parentsNames,
         email: formData.email || currentUser.email,
         personalInfo: formData.personalInfo || '',
+        password: passToUpdate,
         photoUrl: formData.photoUrl || currentUser.photoUrl
     };
 
@@ -207,7 +221,57 @@ export const Profile: React.FC = () => {
                     )}
                 </div>
 
-                <div className="col-span-2 mt-4">
+
+                <div className="col-span-2 mt-8 pt-6 border-t border-slate-100">
+                    <label className="text-sm font-bold text-family-800 uppercase block mb-2 flex items-center gap-2">
+                         Seguridad
+                    </label>
+                    <p className="text-xs text-slate-500 mb-4">Si deseas cambiar tu contraseña, escríbela a continuación. Si la dejas en blanco, tu contraseña actual se mantendrá.</p>
+
+                    {passwordError && (
+                      <div className="mb-4 p-2 bg-red-50 text-red-700 text-sm rounded border border-red-200">
+                        {passwordError}
+                      </div>
+                    )}
+
+                    {isEditing ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nueva Contraseña</label>
+                                <input
+                                    type="password"
+                                    className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                                    placeholder="Dejar en blanco para no cambiar"
+                                    value={newPassword}
+                                    onChange={(e) => {
+                                      setNewPassword(e.target.value);
+                                      setPasswordError('');
+                                    }}
+                                />
+                             </div>
+                             <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Confirmar Nueva Contraseña</label>
+                                <input
+                                    type="password"
+                                    className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                                    placeholder="Repite la nueva contraseña"
+                                    value={confirmPassword}
+                                    onChange={(e) => {
+                                      setConfirmPassword(e.target.value);
+                                      setPasswordError('');
+                                    }}
+                                />
+                             </div>
+                        </div>
+                    ) : (
+                        <div className="bg-family-50 p-4 rounded-lg border border-family-100 text-slate-500 text-sm italic">
+                            Pulsa en "Editar Datos" para cambiar tu contraseña.
+                        </div>
+                    )}
+                </div>
+
+                <div className="col-span-2 mt-4 pt-6 border-t border-slate-100">
+
                     <label className="text-sm font-bold text-family-800 uppercase block mb-2 flex items-center gap-2">
                         <Edit3 size={16} /> Información Personal / Biografía
                     </label>
