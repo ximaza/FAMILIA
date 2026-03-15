@@ -78,25 +78,29 @@ export const Login: React.FC = () => {
         registeredAt: new Date().toISOString()
     };
 
-    await register(newUser);
-    
-    // Send welcome email
-    try {
-        await fetch('/api/send-welcome-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email: newUser.email, 
-                name: newUser.firstName 
-            })
-        });
-    } catch (error) {
-        console.error("Error calling email API:", error);
-    }
+try {
+        await register(newUser);
 
-    alert('Registro completado. Su cuenta está pendiente de aprobación por un administrador.');
-    setIsRegistering(false);
-    setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
+        // Send welcome email
+        try {
+            await fetch('/api/send-welcome-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: newUser.email,
+                    name: newUser.firstName
+                })
+            });
+        } catch (error) {
+            console.error("Error calling email API:", error);
+        }
+
+        alert('Registro completado. Su cuenta está pendiente de aprobación por un administrador.');
+        setIsRegistering(false);
+        setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
+    } catch (e: any) {
+        alert('Hubo un error al procesar el registro: ' + e.message);
+    }
   };
 
 

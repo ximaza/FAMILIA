@@ -35,7 +35,7 @@ const handleSave = async () => {
     const updatedUser: User = {
         ...currentUser,
         firstName: formData.firstName || currentUser.firstName,
-        surnames: (formData.surnames || currentUser.surnames) as [string, string, string, string],
+        surnames: (formData.surnames || currentUser.surnames || ['', '', '', '']) as [string, string, string, string],
         birthDate: formData.birthDate || currentUser.birthDate,
         parentsNames: formData.parentsNames || currentUser.parentsNames,
         email: formData.email || currentUser.email,
@@ -165,7 +165,7 @@ const handleSave = async () => {
                             onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
                         />
                     ) : (
-                        <p className="text-lg font-medium text-slate-800 border-b border-slate-100 pb-2">{new Date(currentUser.birthDate).toLocaleDateString()}</p>
+                        <p className="text-lg font-medium text-slate-800 border-b border-slate-100 pb-2">{currentUser.birthDate ? new Date(currentUser.birthDate).toLocaleDateString() : 'No especificada'}</p>
                     )}
                 </div>
 
@@ -185,7 +185,7 @@ const handleSave = async () => {
                         </div>
                     ) : (
                         <div className="flex flex-wrap gap-2">
-                            {currentUser.surnames.map((s, i) => s && (
+                            {(currentUser.surnames || []).map((s, i) => s && (
                                 <span key={i} className="bg-slate-50 border border-slate-200 px-3 py-1 rounded text-slate-700 font-medium">
                                     {s}
                                 </span>
