@@ -16,16 +16,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
     const initAuth = async () => {
       const storedId = localStorage.getItem('maz_current_user_id');
       if (storedId) {
         try {
           const users = await storage.getUsers();
           const user = users.find(u => u.id === storedId);
-          if (user) setCurrentUser(user);
+          // ONLY set user if active or admin
+          if (user && (user.status === 'active' || user.role === 'admin')) {
+             setCurrentUser(user);
+          } else {
+             localStorage.removeItem('maz_current_user_id');
+          }
         } catch (error) {
           console.error("Error initializing auth:", error);
+          localStorage.removeItem('maz_current_user_id');
         }
       }
       setIsLoading(false);
@@ -33,22 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const user = await storage.login(email, password);
-    if (user) {
-      if (user.status === 'rejected') {
-         alert('Su cuenta ha sido rechazada por el administrador.');
-         return false;
-      }
-      if (user.status === 'pending_approval') {
-         alert('Su cuenta está pendiente de aprobación por el administrador.');
-         return false;
-      }
-      setCurrentUser(user);
-      localStorage.setItem('maz_current_user_id', user.id);
-      return true;
+const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+        const user = await storage.login(email, password);
+        if (user) {
+          if (user.status === 'rejected') {
+             alert('Su cuenta ha sido rechazada por el administrador.');
+             return false;
+          }
+          if (user.status === 'pending_approval') {
+             alert('Su cuenta está pendiente de aprobación por el administrador.');
+             return false;
+          }
+          setCurrentUser(user);
+          localStorage.setItem('maz_current_user_id', user.id);
+          return true;
+        }
+        return false;
+    } catch(e) {
+        return false; // Invalid credentials throw error
     }
-    return false;
   };
 
   const register = async (newUser: User) => {

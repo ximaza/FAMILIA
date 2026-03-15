@@ -204,18 +204,28 @@ async function startServer() {
     }
   });
 
-  app.post("/api/users", async (req, res) => {
+app.post("/api/users", async (req, res) => {
     try {
       const newUser = req.body;
+      const email = newUser.email.toLowerCase();
+
+      let users = [];
       if (db) {
-        const { id, ...data } = newUser;
-        await db.collection("users").doc(id).set(data);
-        res.json(newUser);
+          const snapshot = await db.collection("users").where('email', '==', email).limit(1).get();
+          if (!snapshot.empty) {
+              return res.status(409).json({ error: "El correo electrónico ya está registrado." });
+          }
+          const { id, ...data } = newUser;
+          await db.collection("users").doc(id).set(data);
+          res.json(newUser);
       } else {
-        const users = (await readData("users.json")) || [];
-        users.push(newUser);
-        await writeData("users.json", users);
-        res.json(newUser);
+          users = (await readData("users.json")) || [];
+          if (users.some((u: any) => u.email.toLowerCase() === email)) {
+              return res.status(409).json({ error: "El correo electrónico ya está registrado." });
+          }
+          users.push(newUser);
+          await writeData("users.json", users);
+          res.json(newUser);
       }
     } catch (error) {
       console.error("Error creating user:", error);
