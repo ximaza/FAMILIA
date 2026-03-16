@@ -7,23 +7,6 @@ import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import admin from "firebase-admin";
 
-
-const defaultHistory = {
-  content: "Bienvenido a la historia de la familia Mazarrasa. Utilice el botón de edición para añadir la historia familiar.",
-  images: [],
-  lastUpdated: new Date().toISOString(),
-  updatedBy: "Sistema"
-};
-
-
-const defaultHomepage = {
-  welcomeMessage: "Bienvenido/a",
-  mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
-  bodyContent: "Espacio reservado para compartir noticias y novedades.",
-  imageUrl: "",
-  lastUpdated: new Date().toISOString()
-};
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -333,10 +316,10 @@ app.post("/api/users", async (req, res) => {
     try {
       if (db) {
         const doc = await db.collection("config").doc("history").get();
-        res.json(doc.exists ? doc.data() : defaultHistory);
+        res.json(doc.exists ? doc.data() : null);
       } else {
         const history = await readData("history.json");
-        res.json(history || defaultHistory);
+        res.json(history);
       }
     } catch (error) {
       console.error("Error fetching history:", error);
@@ -364,10 +347,10 @@ app.post("/api/users", async (req, res) => {
     try {
       if (db) {
         const doc = await db.collection("config").doc("homepage").get();
-        res.json(doc.exists ? doc.data() : defaultHomepage);
+        res.json(doc.exists ? doc.data() : null);
       } else {
         const homepage = await readData("homepage.json");
-        res.json(homepage || defaultHomepage);
+        res.json(homepage);
       }
     } catch (error) {
       console.error("Error fetching homepage:", error);

@@ -114,14 +114,15 @@ try {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: forgotEmail })
         });
+        const data = await res.json();
         if (res.ok) {
             setForgotMessage('Si el correo existe, se ha enviado una nueva contraseña temporal.');
             setForgotEmail('');
         } else {
-            setForgotError('Hubo un error al procesar tu solicitud.');
+            setForgotError(data.error || 'Hubo un error al procesar tu solicitud.');
         }
     } catch(err) {
-        setForgotError('Hubo un error de conexión.');
+        setForgotError('Hubo un error de conexión con el servidor.');
     }
   };
 
