@@ -526,6 +526,12 @@ app.post("/api/users", async (req, res) => {
     }
   });
 
+  // Serve static files from the React build
+  app.use(express.static(path.join(__dirname, "dist")));
+
+  // Serve the public directory for static assets like admin.html
+  app.use(express.static(path.join(__dirname, "public")));
+
   // Fallback for SPA routing
   app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
     res.sendFile(path.join(__dirname, "dist", "index.html"));
