@@ -20,7 +20,8 @@ const defaultHomepage = {
   mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
   bodyContent: "Espacio reservado para compartir noticias y novedades.",
   imageUrl: "",
-  lastUpdated: new Date().toISOString()
+  lastUpdated: new Date().toISOString(),
+  sections: []
 };
 
 dotenv.config();
