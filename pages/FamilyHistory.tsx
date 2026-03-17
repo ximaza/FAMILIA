@@ -17,6 +17,18 @@ export const FamilyHistory: React.FC = () => {
         setHistory(data);
         setEditContent(data.content);
         setEditImages(data.images || []);
+    }).catch(err => {
+        console.error("Error loading history:", err);
+        // Fallback para evitar Cargando infinito
+        const fallback = {
+            content: "Bienvenido a la historia de la familia Mazarrasa. Utilice el botón de edición para añadir la historia familiar.",
+            images: [],
+            lastUpdated: new Date().toISOString(),
+            updatedBy: "Sistema"
+        };
+        setHistory(fallback);
+        setEditContent(fallback.content);
+        setEditImages(fallback.images);
     });
   }, []);
 

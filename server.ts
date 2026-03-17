@@ -510,93 +510,29 @@ app.post("/api/users", async (req, res) => {
             return res.json({ success: true, message: "If the email exists, a new password has been sent." });
         }
 
-        // Generate a random 8 character alphanumeric temporary password
-        const tempPassword = Math.random().toString(36).slice(-8);
-
-        // Update the database
+        // Flag the user for manual password reset by admin
         if (db) {
-            await db.collection("users").doc(user.id).set({ password: tempPassword }, { merge: true });
+            await db.collection("users").doc(user.id).set({ resetRequested: true }, { merge: true });
         } else {
-            const updatedUsers = users.map((u: any) => u.id === user.id ? { ...u, password: tempPassword } : u);
+            const updatedUsers = users.map((u: any) => u.id === user.id ? { ...u, resetRequested: true } : u);
             await writeData("users.json", updatedUsers);
         }
 
-        // Send Email
-        const config = getEmailConfig();
-        if (config.user && config.pass) {
-            const transporter = nodemailer.createTransport({
-                service: "gmail",
-                auth: { user: config.user, pass: config.pass },
-            });
-            await transporter.sendMail({
-                from: `"Familia Mazarrasa" <${config.user}>`,
-                to: email,
-                subject: "Recuperación de Contraseña - Familia Mazarrasa",
-                text: `Hola ${user.firstName},
-
-Tu nueva contraseña temporal es: ${tempPassword}
-
-Por favor, entra al sistema y cámbiala lo antes posible en tu perfil.`,
-                html: `
-                  <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
-                    <h2 style="color: #935432;">Recuperación de contraseña</h2>
-                    <p>Hola <strong>${user.firstName}</strong>,</p>
-                    <p>Has solicitado recuperar tu contraseña. Te hemos generado una nueva contraseña temporal:</p>
-                    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 24px; font-weight: bold; text-align: center; margin: 20px 0; letter-spacing: 2px;">
-                      ${tempPassword}
-                    </div>
-                    <p>Por favor, usa esta contraseña para entrar y ve a la sección "Mi Perfil" para cambiarla por una nueva inmediatamente.</p>
-                  </div>
-                `
-            });
-            console.log(`Password recovery email sent to ${email}`);
-        }
-
-        res.json({ success: true, message: "If the email exists, a new password has been sent." });
+        console.log(`Password reset manually requested for ${email}`);
+        res.json({ success: true, message: "Solicitud registrada correctamente." });
     } catch (e) {
         console.error("Forgot password error:", e);
         res.status(500).json({ error: "Server error" });
     }
   });
 
-  // Serve public directory
-
-  app.use(express.static(path.join(__dirname, "public")));
-
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "custom", // Changed to custom to handle SPA manually and allow other files
-    });
-    app.use(vite.middlewares);
-
-// Development catch-all for SPA
-    app.use(async (req, res, next) => {
-      if (req.path.startsWith("/api/")) return next();
-      if (req.path.includes(".")) return next();
-      try {
-        const html = await fs.readFile(path.join(__dirname, "index.html"), "utf-8");
-        const transformedHtml = await vite.transformIndexHtml(req.originalUrl, html);
-        res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
-      } catch (e) {
-        vite.ssrFixStacktrace(e as Error);
-        next(e);
-      }
-    });
-  } else {
-    // Serve static files in production
-    app.use(express.static(path.join(__dirname, "dist")));
-
-// Production catch-all for SPA
-    app.use((req, res, next) => {
-      if (req.path.startsWith("/api/")) return next();
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
-    });
-  }
+  // Fallback for SPA routing
+  app.get(/^\/(?!api\/|direct-admin|admin\.html).*/, (req, res) => {
+    res.sendFile(path.join(__dirname, "dist", "index.html"));
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
 }
 
