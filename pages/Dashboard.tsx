@@ -14,6 +14,18 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     storage.getHomePage().then(data => {
       setContent(data);
       setEditForm(data);
+    }).catch(err => {
+      console.error("Error loading homepage:", err);
+      // Fallback para evitar Cargando infinito
+      const fallback = {
+        welcomeMessage: "Bienvenido/a",
+        mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
+        bodyContent: "Espacio reservado para compartir noticias y novedades.",
+        imageUrl: "",
+        lastUpdated: new Date().toISOString()
+      };
+      setContent(fallback);
+      setEditForm(fallback);
     });
   }, []);
 

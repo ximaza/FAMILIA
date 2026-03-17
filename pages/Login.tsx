@@ -116,7 +116,7 @@ try {
         });
         const data = await res.json();
         if (res.ok) {
-            setForgotMessage('Si el correo existe, se ha enviado una nueva contraseña temporal.');
+            setForgotMessage('Solicitud recibida. El administrador ha sido notificado y se pondrá en contacto contigo para proporcionarte una nueva contraseña.');
             setForgotEmail('');
         } else {
             setForgotError(data.error || 'Hubo un error al procesar tu solicitud.');

@@ -14,6 +14,7 @@ export interface User {
   status: 'active' | 'pending_approval' | 'rejected';
   registeredAt: string;
   rejectedAt?: string;
+  resetRequested?: boolean;
 }
 
 export interface Notice {
