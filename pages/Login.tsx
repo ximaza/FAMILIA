@@ -10,6 +10,8 @@ export const Login: React.FC = () => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState('');
+  const [registerMessage, setRegisterMessage] = useState('');
+  const [registerError, setRegisterError] = useState('');
   
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
@@ -240,6 +242,17 @@ try {
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
+                {registerMessage && (
+                  <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium">
+                    {registerMessage}
+                  </div>
+                )}
+                {registerError && (
+                  <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
+                    {registerError}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <label className="text-xs font-bold text-slate-500 uppercase">Nombre</label>
