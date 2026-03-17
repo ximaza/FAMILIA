@@ -95,7 +95,7 @@ try {
             console.error("Error calling email API:", error);
         }
 
-        alert('Registro completado. Su cuenta está pendiente de aprobación por un administrador.');
+        alert('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido.');
         setIsRegistering(false);
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
     } catch (e: any) {

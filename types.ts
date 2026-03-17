@@ -32,6 +32,7 @@ export interface FamilyHistory {
   content: string;
   images?: string[]; // Array of Base64 strings for history gallery
   lastUpdated: string;
+  sections?: HomeSection[];
   updatedBy: string;
 }
 
@@ -39,10 +40,20 @@ export interface GeneanetConfig {
   url: string;
 }
 
+
+export interface HomeSection {
+  id: string;
+  title?: string;
+  content?: string;
+  imageUrl?: string;
+}
+
 export interface HomePageContent {
+
   welcomeMessage: string;
   mainTitle: string;
   bodyContent: string;
   imageUrl?: string;
   lastUpdated: string;
+  sections?: HomeSection[];
 }

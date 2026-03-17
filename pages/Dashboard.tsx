@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
-import { Edit2, Save, X, Image as ImageIcon } from 'lucide-react';
-import { HomePageContent } from '../types';
+import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { HomePageContent, HomeSection } from '../types';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
@@ -12,20 +12,36 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
   useEffect(() => {
     storage.getHomePage().then(data => {
+      // Migrate legacy data to sections if needed
+      if (!data.sections || data.sections.length === 0) {
+        if (data.bodyContent || data.imageUrl) {
+          data.sections = [{
+            id: 'section-' + Date.now(),
+            content: data.bodyContent,
+            imageUrl: data.imageUrl
+          }];
+          // Clean up old fields visually
+          data.bodyContent = '';
+          data.imageUrl = '';
+        } else {
+          data.sections = [];
+        }
+      }
       setContent(data);
-      setEditForm(data);
+      setEditForm(JSON.parse(JSON.stringify(data))); // Deep copy
     }).catch(err => {
       console.error("Error loading homepage:", err);
       // Fallback para evitar Cargando infinito
-      const fallback = {
+      const fallback: HomePageContent = {
         welcomeMessage: "Bienvenido/a",
         mainTitle: "AL ENCUENTRO DE LOS MAZARRASA",
-        bodyContent: "Espacio reservado para compartir noticias y novedades.",
+        bodyContent: "",
         imageUrl: "",
+        sections: [],
         lastUpdated: new Date().toISOString()
       };
       setContent(fallback);
-      setEditForm(fallback);
+      setEditForm(JSON.parse(JSON.stringify(fallback)));
     });
   }, []);
 
@@ -42,15 +58,51 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     setIsEditing(false);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 800 * 1024) {
+          alert("La imagen es demasiado grande. Máximo 800KB.");
+          return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setEditForm({ ...editForm, imageUrl: reader.result as string });
+        if (!editForm) return;
+        setEditForm({
+          ...editForm,
+          sections: editForm.sections?.map(sec =>
+            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
+          )
+        });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const addSection = () => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: [...(editForm.sections || []), { id: 'section-' + Date.now(), title: '', content: '', imageUrl: '' }]
+    });
+  };
+
+  const removeSection = (sectionId: string) => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: editForm.sections?.filter(sec => sec.id !== sectionId)
+    });
+  };
+
+  const updateSection = (sectionId: string, field: keyof HomeSection, value: string) => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: editForm.sections?.map(sec =>
+        sec.id === sectionId ? { ...sec, [field]: value } : sec
+      )
+    });
   };
 
   if (!content || !editForm) return <div className="text-center py-12">Cargando...</div>;
@@ -88,7 +140,8 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 bg-slate-50 p-6 rounded-lg border border-slate-200">
+            <h4 className="font-bold text-slate-700 border-b border-slate-200 pb-2 mb-4">Cabecera Principal</h4>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mensaje de Bienvenida</label>
               <input 
@@ -107,36 +160,75 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
                 placeholder="Ej: AL ENCUENTRO DE LOS MAZARRASA"
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Contenido de la Página (Opcional)</label>
-              <textarea 
-                className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-turquoise-500 outline-none min-h-[150px]"
-                value={editForm.bodyContent}
-                onChange={e => setEditForm({...editForm, bodyContent: e.target.value})}
-                placeholder="Escribe aquí el texto que desees mostrar..."
-              />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+               <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
+               <button onClick={addSection} className="flex items-center gap-1 text-sm bg-turquoise-100 text-turquoise-700 px-3 py-1.5 rounded-lg hover:bg-turquoise-200 transition">
+                  <PlusCircle size={16} /> Añadir Sección
+               </button>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Imagen Destacada (Opcional)</label>
-              <div className="mt-2 flex items-center gap-4">
-                {editForm.imageUrl && (
-                  <img src={editForm.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
-                )}
-                <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-turquoise-400 hover:bg-turquoise-50 transition">
-                  <ImageIcon className="text-slate-400" size={24} />
-                  <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                </label>
-                {editForm.imageUrl && (
+
+            {editForm.sections?.map((section, index) => (
+               <div key={section.id} className="relative bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
                   <button 
-                    onClick={() => setEditForm({...editForm, imageUrl: undefined})}
-                    className="text-xs text-red-500 hover:underline"
+                    onClick={() => removeSection(section.id)}
+                    className="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-full transition"
+                    title="Eliminar esta sección"
                   >
-                    Eliminar imagen
+                    <Trash2 size={16} />
                   </button>
-                )}
-              </div>
-            </div>
+                  <h5 className="text-xs font-bold text-slate-400 uppercase mb-4">Sección {index + 1}</h5>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Título de la sección (Opcional)</label>
+                      <input
+                        className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-turquoise-500 outline-none font-serif text-lg"
+                        value={section.title || ''}
+                        onChange={e => updateSection(section.id, 'title', e.target.value)}
+                        placeholder="Ej: Reunión Anual 2024"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Contenido / Escrito</label>
+                      <textarea
+                        className="w-full p-3 border border-slate-200 rounded focus:ring-2 focus:ring-turquoise-500 outline-none min-h-[120px]"
+                        value={section.content || ''}
+                        onChange={e => updateSection(section.id, 'content', e.target.value)}
+                        placeholder="Escribe aquí el texto que desees mostrar..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Imagen (Opcional)</label>
+                      <div className="mt-2 flex items-center gap-4">
+                        {section.imageUrl && (
+                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                        )}
+                        <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-turquoise-400 hover:bg-turquoise-50 transition">
+                          <ImageIcon className="text-slate-400" size={24} />
+                          <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, section.id)} />
+                        </label>
+                        {section.imageUrl && (
+                          <button
+                            onClick={() => updateSection(section.id, 'imageUrl', '')}
+                            className="text-xs text-red-500 hover:underline"
+                          >
+                            Eliminar imagen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+               </div>
+            ))}
+            {(!editForm.sections || editForm.sections.length === 0) && (
+                <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-slate-500">
+                    No hay secciones creadas. Haz clic en "Añadir Sección" para comenzar.
+                </div>
+            )}
           </div>
         </div>
       ) : (
@@ -150,22 +242,42 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             </h2>
           </header>
 
-          <div className="max-w-3xl mx-auto space-y-8">
-            {content.imageUrl && (
-              <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-white">
-                <img src={content.imageUrl} alt="Familia Mazarrasa" className="w-full h-auto" />
-              </div>
-            )}
-            
-            {content.bodyContent && (
-              <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed text-center whitespace-pre-wrap font-serif italic">
-                {content.bodyContent}
-              </div>
-            )}
+          <div className="max-w-4xl mx-auto space-y-16">
+            {content.sections?.map((section, idx) => (
+                <div key={section.id} className="space-y-6 animate-fade-in">
+                    {section.title && (
+                        <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                            {section.title}
+                        </h3>
+                    )}
 
-            {!content.imageUrl && !content.bodyContent && (
-              <div className="min-h-[200px] flex items-center justify-center">
-                {/* Espacio reservado para futura imagen o texto */}
+                    {/* Disposición en dos columnas o una sola columna si no hay imagen/texto */}
+                    <div className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}>
+                        {section.imageUrl && (
+                            <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
+                                <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+                                    <img src={section.imageUrl} alt={section.title || "Familia Mazarrasa"} className="w-full h-auto object-cover" />
+                                </div>
+                            </div>
+                        )}
+
+                        {section.content && (
+                            <div className={`w-full ${section.imageUrl ? 'md:w-1/2' : ''} prose prose-lg prose-stone max-w-none`}>
+                                <div className="text-slate-700 leading-relaxed whitespace-pre-wrap font-serif text-justify">
+                                    {section.content}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    {idx < (content.sections?.length || 0) - 1 && (
+                        <div className="w-24 h-px bg-slate-300 mx-auto mt-16"></div>
+                    )}
+                </div>
+            ))}
+
+            {(!content.sections || content.sections.length === 0) && (
+              <div className="min-h-[200px] flex items-center justify-center text-slate-400 italic font-serif">
+                 <p>Espacio reservado para novedades y escritos de la familia.</p>
               </div>
             )}
           </div>
