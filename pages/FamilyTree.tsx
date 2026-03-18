@@ -15,7 +15,7 @@ export const FamilyTree: React.FC = () => {
         </p>
         
         <a 
-          href="https://www.geneanet.org/" 
+          href="https://gw.geneanet.org/ximaza?lang=es&n=mazarrasa+jorganes&oc=0&p=juan+manuel&type=tree"
           target="_blank" 
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 bg-family-600 text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-family-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1"
