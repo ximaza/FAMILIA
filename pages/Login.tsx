@@ -20,7 +20,8 @@ export const Login: React.FC = () => {
     firstName: '',
     surname1: '', surname2: '', surname3: '', surname4: '',
     birthDate: '',
-    parentsNames: '',
+    fatherName: '',
+    motherName: '',
     email: '',
     password: ''
   });
@@ -70,7 +71,8 @@ export const Login: React.FC = () => {
         firstName: formData.firstName,
         surnames: [formData.surname1, formData.surname2, formData.surname3, formData.surname4],
         birthDate: formData.birthDate,
-        parentsNames: formData.parentsNames,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
         email: formData.email,
         password: formData.password,
         role: 'member',
@@ -97,7 +99,8 @@ try {
 
         alert('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido.');
         setIsRegistering(false);
-        setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
+        setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '',
+    motherName: '', email: '', password: '' });
     } catch (e: any) {
         alert('Hubo un error al procesar el registro: ' + e.message);
     }
@@ -300,13 +303,23 @@ try {
                 </div>
                 
                 <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre de los Padres</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre del Padre</label>
                     <input 
                         required
                         className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        placeholder="Padre y Madre..."
-                        value={formData.parentsNames}
-                        onChange={e => setFormData({...formData, parentsNames: e.target.value})}
+                        placeholder="Nombre del padre..."
+                        value={formData.fatherName}
+                        onChange={e => setFormData({...formData, fatherName: e.target.value})}
+                    />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre de la Madre</label>
+                    <input
+                        required
+                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                        placeholder="Nombre de la madre..."
+                        value={formData.motherName}
+                        onChange={e => setFormData({...formData, motherName: e.target.value})}
                     />
                 </div>
 
