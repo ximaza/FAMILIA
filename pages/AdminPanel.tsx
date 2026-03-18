@@ -109,7 +109,8 @@ export const AdminPanel: React.FC = () => {
                             <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames?.join(' ') || ''}</p>
                             <div className="text-sm text-slate-600 space-y-1 mt-1">
                                 <p>Email: {user.email}</p>
-                                <p>Padres: {user.parentsNames}</p>
+                                <p>Padre: {user.fatherName || 'N/A'}</p>
+                                <p>Madre: {user.motherName || 'N/A'}</p>
 
                                 <p>Fecha Nacimiento: {user.birthDate ? new Date(user.birthDate).toLocaleDateString() : 'N/A'}</p>
                                 <p>Registrado: {user.registeredAt ? new Date(user.registeredAt).toLocaleString() : 'N/A'}</p>
