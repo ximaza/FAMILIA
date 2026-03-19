@@ -100,8 +100,8 @@ try {
             console.error("Error calling email API:", error);
         }
 
-        alert('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido.');
-        setIsRegistering(false);
+        // Replaced alert with success state update
+        setIsRegisterSuccess(true);
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '',
     motherName: '', email: '', password: '' });
     } catch (e: any) {
