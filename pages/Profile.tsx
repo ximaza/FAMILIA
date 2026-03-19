@@ -198,6 +198,7 @@ const handleSave = async () => {
                     )}
                 </div>
 
+
                 <div className="col-span-2 md:col-span-1">
                     <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nombre del Padre</label>
                     {isEditing ? (

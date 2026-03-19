@@ -39,8 +39,8 @@ export const AdminPanel: React.FC = () => {
         // Refresh local list
         const updatedUsers = await storage.getUsers();
         setUsers(updatedUsers);
-    } catch (e: any) {
-        alert("Error actualizando usuario: " + e.message);
+    } catch (e: unknown) {
+        alert("Error actualizando usuario: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -54,8 +54,8 @@ export const AdminPanel: React.FC = () => {
               await storage.deleteUser(userId);
               const updatedUsers = await storage.getUsers();
               setUsers(updatedUsers);
-          } catch (e: any) {
-              alert("Error eliminando usuario: " + e.message);
+          } catch (e: unknown) {
+              alert("Error eliminando usuario: " + (e instanceof Error ? e.message : String(e)));
           }
       }
   };
