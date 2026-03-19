@@ -39,8 +39,13 @@ export const AdminPanel: React.FC = () => {
         // Refresh local list
         const updatedUsers = await storage.getUsers();
         setUsers(updatedUsers);
+<<<<<<< HEAD
+    } catch (e: unknown) {
+        alert("Error actualizando usuario: " + (e instanceof Error ? e.message : String(e)));
+=======
     } catch (e: any) {
         alert("Error actualizando usuario: " + e.message);
+>>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
     }
   };
 
@@ -54,8 +59,13 @@ export const AdminPanel: React.FC = () => {
               await storage.deleteUser(userId);
               const updatedUsers = await storage.getUsers();
               setUsers(updatedUsers);
+<<<<<<< HEAD
+          } catch (e: unknown) {
+              alert("Error eliminando usuario: " + (e instanceof Error ? e.message : String(e)));
+=======
           } catch (e: any) {
               alert("Error eliminando usuario: " + e.message);
+>>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
           }
       }
   };
@@ -109,8 +119,12 @@ export const AdminPanel: React.FC = () => {
                             <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames?.join(' ') || ''}</p>
                             <div className="text-sm text-slate-600 space-y-1 mt-1">
                                 <p>Email: {user.email}</p>
+<<<<<<< HEAD
+                                <p>Padres: {user.parentsNames}</p>
+=======
                                 <p>Padre: {user.fatherName || 'N/A'}</p>
                                 <p>Madre: {user.motherName || 'N/A'}</p>
+>>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
 
                                 <p>Fecha Nacimiento: {user.birthDate ? new Date(user.birthDate).toLocaleDateString() : 'N/A'}</p>
                                 <p>Registrado: {user.registeredAt ? new Date(user.registeredAt).toLocaleString() : 'N/A'}</p>
