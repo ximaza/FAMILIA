@@ -105,7 +105,6 @@ try {
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '', motherName: '', email: '', password: '' });
     } catch (e: unknown) {
         alert('Hubo un error al procesar el registro: ' + (e instanceof Error ? e.message : String(e)));
->>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
     }
   };
 
@@ -351,7 +350,6 @@ try {
                         placeholder="Nombre de la madre..."
                         value={formData.motherName}
                         onChange={e => setFormData({...formData, motherName: e.target.value})}
->>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
                     />
                 </div>
 

@@ -5,12 +5,8 @@ export interface User {
   firstName: string;
   surnames: [string, string, string, string]; // 4 surnames
   birthDate: string;
-<<<<<<< HEAD
-  parentsNames: string;
-=======
   fatherName?: string;
   motherName?: string;
->>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
   email: string;
   password?: string; // In a real app, this is hashed. Here simplistic.
   personalInfo?: string; // New field for bio/personal info

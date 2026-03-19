@@ -72,12 +72,6 @@ export const Members: React.FC = () => {
                                 </a>
                              </div>
                         </div>
-<<<<<<< HEAD
-                        <div className="col-span-full">
-                            <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre de los Padres</label>
-                            <p className="text-lg text-slate-800 font-medium border-b border-slate-100 pb-2">
-                                {selectedMember.parentsNames}
-=======
                         <div className="col-span-1">
                             <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre del Padre</label>
                             <p className="text-lg text-slate-800 font-medium border-b border-slate-100 pb-2">
@@ -88,7 +82,6 @@ export const Members: React.FC = () => {
                             <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre de la Madre</label>
                             <p className="text-lg text-slate-800 font-medium border-b border-slate-100 pb-2">
                                 {selectedMember.motherName || 'Desconocida'}
->>>>>>> 09650f4 (Merge pull request #28 from ximaza/jules-16508749095822101027-23cd88f9)
                             </p>
                         </div>
                         <div className="col-span-full">
