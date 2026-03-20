@@ -27,6 +27,7 @@ export interface Notice {
   imageUrl?: string; // Base64 string for notice image
   type: 'general' | 'offer' | 'event';
   date: string;
+  eventDate?: string;
 }
 
 export interface FamilyHistory {
