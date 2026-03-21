@@ -101,7 +101,7 @@ try {
         }
 
 
-        setIsRegisterSuccess(true);
+        setRegisterMessage('Hola, tú registro se ha enviado y pendiente de validación por administración. En breve podrás acceder a todo el contenido');
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '', motherName: '', email: '', password: '' });
     } catch (e: unknown) {
         alert('Hubo un error al procesar el registro: ' + (e instanceof Error ? e.message : String(e)));
@@ -240,32 +240,16 @@ try {
                 </div>
 
             </form>
-        ) : isRegisterSuccess ? (
-            // Immediate Success View
-            <div className="space-y-6 text-center py-8">
-                <div className="mx-auto w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-sm border border-green-200">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <h2 className="text-3xl font-bold text-slate-800 mb-4">Registro Enviado</h2>
-                <p className="text-lg text-slate-600 leading-relaxed font-medium bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-inner">
-                    Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido.
-                </p>
-                <div className="pt-8">
-                    <button
-                        onClick={() => { setIsRegisterSuccess(false); setIsRegistering(false); }}
-                        className="bg-family-600 hover:bg-family-700 text-white py-3 px-8 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
-                    >
-                        Volver al Inicio
-                    </button>
-                </div>
-            </div>
         ) : (
             // Register Form
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
+                {registerMessage && (
+                  <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium">
+                    {registerMessage}
+                  </div>
+                )}
                 {registerError && (
                   <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
                     {registerError}

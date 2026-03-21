@@ -16,5 +16,23 @@
     "registeredAt": "2025-05-10T10:00:00.000Z",
     "fatherName": "Fundadores de la rama",
     "motherName": "Fundadora"
+  },
+  {
+    "id": "1774124456562",
+    "firstName": "Test",
+    "surnames": [
+      "Mazarrasa",
+      "García",
+      "Pérez",
+      "López"
+    ],
+    "birthDate": "1990-01-01",
+    "fatherName": "Padre",
+    "motherName": "Madre",
+    "email": "test@maz.com",
+    "password": "clave123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-03-21T20:20:56.562Z"
   }
 ]
