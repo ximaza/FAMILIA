@@ -1,5 +1,19 @@
 {
-  "content": "La familia MAZ tiene sus orígenes en el siglo XIX...",
-  "lastUpdated": "2025-05-10T10:00:00.000Z",
-  "updatedBy": "Joaquín"
+  "content": "",
+  "lastUpdated": "2026-03-21T00:01:02.041Z",
+  "updatedBy": "Joaquín",
+  "sections": [
+    {
+      "id": "section-1774051258148",
+      "content": "La familia MAZ tiene sus orígenes en el siglo XIX...",
+      "imageUrl": ""
+    },
+    {
+      "id": "section-1774051260378",
+      "title": "El Comienzo",
+      "content": "Este es un texto de prueba para demostrar que la página de historia ahora admite secciones y es completamente editable, con su respectivo orden alterno al guardar.",
+      "imageUrl": ""
+    }
+  ],
+  "images": []
 }
