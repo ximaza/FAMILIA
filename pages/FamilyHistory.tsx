@@ -1,42 +1,67 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
-import { FamilyHistory as FamilyHistoryType } from '../types';
-import { Edit, Save, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { FamilyHistory as FamilyHistoryType, HomeSection } from '../types';
+import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
 
 export const FamilyHistory: React.FC = () => {
   const { currentUser } = useAuth();
   const [history, setHistory] = useState<FamilyHistoryType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState('');
-  const [editImages, setEditImages] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
 
   useEffect(() => {
     storage.getHistory().then(data => {
+        // Migrate legacy data to sections if needed
+        if (!data.sections || data.sections.length === 0) {
+          if (data.content || (data.images && data.images.length > 0)) {
+            // Convert old content and the first image to a section
+            data.sections = [{
+              id: 'section-' + Date.now(),
+              content: data.content,
+              imageUrl: data.images && data.images.length > 0 ? data.images[0] : ''
+            }];
+            // If there are more images, append them as separate sections
+            if (data.images && data.images.length > 1) {
+                for (let i = 1; i < data.images.length; i++) {
+                    data.sections.push({
+                        id: 'section-' + Date.now() + i,
+                        content: '',
+                        imageUrl: data.images[i]
+                    });
+                }
+            }
+            // Clean up old fields visually
+            data.content = '';
+            data.images = [];
+          } else {
+            data.sections = [];
+          }
+        }
         setHistory(data);
-        setEditContent(data.content);
-        setEditImages(data.images || []);
+        setEditForm(JSON.parse(JSON.stringify(data))); // Deep copy
     }).catch(err => {
         console.error("Error loading history:", err);
         // Fallback para evitar Cargando infinito
-        const fallback = {
-            content: "Bienvenido a la historia de la familia Mazarrasa. Utilice el botón de edición para añadir la historia familiar.",
+        const fallback: FamilyHistoryType = {
+            content: "",
             images: [],
+            sections: [{
+              id: 'section-1',
+              content: "Bienvenido a la historia de la familia Mazarrasa. Utilice el botón de edición para añadir la historia familiar."
+            }],
             lastUpdated: new Date().toISOString(),
             updatedBy: "Sistema"
         };
         setHistory(fallback);
-        setEditContent(fallback.content);
-        setEditImages(fallback.images);
+        setEditForm(JSON.parse(JSON.stringify(fallback)));
     });
   }, []);
 
   const handleSave = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !editForm) return;
     const newHistory: FamilyHistoryType = {
-        content: editContent,
-        images: editImages,
+        ...editForm,
         lastUpdated: new Date().toISOString(),
         updatedBy: currentUser.firstName
     };
@@ -45,31 +70,57 @@ export const FamilyHistory: React.FC = () => {
     setIsEditing(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-          if (file.size > 800 * 1024) {
-              alert("La imagen es demasiado grande. Máximo 800KB.");
-              return;
-          }
-          const reader = new FileReader();
-          reader.onloadend = () => {
-              setEditImages([...editImages, reader.result as string]);
-          };
-          reader.readAsDataURL(file);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 800 * 1024) {
+          alert("La imagen es demasiado grande. Máximo 800KB.");
+          return;
       }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (!editForm) return;
+        setEditForm({
+          ...editForm,
+          sections: editForm.sections?.map(sec =>
+            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
+          )
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const removeImage = (index: number) => {
-      const newImages = [...editImages];
-      newImages.splice(index, 1);
-      setEditImages(newImages);
+  const addSection = () => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: [...(editForm.sections || []), { id: 'section-' + Date.now(), title: '', content: '', imageUrl: '' }]
+    });
   };
 
-  if (!history) return <div>Cargando...</div>;
+  const removeSection = (sectionId: string) => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: editForm.sections?.filter(sec => sec.id !== sectionId)
+    });
+  };
+
+  const updateSection = (sectionId: string, field: keyof HomeSection, value: string) => {
+    if (!editForm) return;
+    setEditForm({
+      ...editForm,
+      sections: editForm.sections?.map(sec =>
+        sec.id === sectionId ? { ...sec, [field]: value } : sec
+      )
+    });
+  };
+
+  if (!history || !editForm) return <div>Cargando...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6 relative">
       <div className="flex justify-between items-end mb-8 border-b border-family-200 pb-4">
         <div>
             <h2 className="text-4xl font-serif font-bold text-family-900">Historia Familiar</h2>
@@ -87,84 +138,140 @@ export const FamilyHistory: React.FC = () => {
       </div>
 
       {isEditing ? (
-        <div className="bg-white p-6 rounded-xl shadow-lg animate-fade-in">
-            <div className="mb-6">
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Contenido de texto</h3>
-                <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full min-h-[300px] p-4 border border-slate-300 rounded-lg font-serif text-lg leading-relaxed focus:ring-2 focus:ring-family-400 outline-none"
-                />
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-family-200 space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+            <h3 className="text-xl font-bold text-slate-800">Editar Historia Familiar</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                    setIsEditing(false);
+                    setEditForm(JSON.parse(JSON.stringify(history)));
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 transition"
+              >
+                <X size={24} />
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 bg-family-600 text-white px-4 py-2 rounded-lg hover:bg-family-700 transition shadow-md"
+              >
+                <Save size={18} />
+                <span>Guardar Cambios</span>
+              </button>
             </div>
-            
-            <div className="mb-6">
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-2">Galería de Imágenes</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    {editImages.map((img, idx) => (
-                        <div key={idx} className="relative group">
-                            <img src={img} className="w-full h-32 object-cover rounded-lg border border-slate-200" />
-                            <button 
-                                onClick={() => removeImage(idx)}
-                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
-                            >
-                                <Trash2 size={12} />
-                            </button>
-                        </div>
-                    ))}
-                    <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg text-slate-400 hover:bg-slate-50 hover:border-family-400 hover:text-family-500 transition cursor-pointer"
-                    >
-                        <ImageIcon size={24} />
-                        <span className="text-xs mt-2">Añadir Foto</span>
-                    </button>
-                </div>
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+               <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
+               <button onClick={addSection} className="flex items-center gap-1 text-sm bg-family-100 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-200 transition">
+                  <PlusCircle size={16} /> Añadir Sección
+               </button>
             </div>
 
-            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
-                <button 
-                    onClick={() => {
-                        setIsEditing(false);
-                        setEditContent(history.content);
-                        setEditImages(history.images || []);
-                    }}
-                    className="px-4 py-2 text-slate-600 hover:text-slate-800 flex items-center gap-2"
-                >
-                    <X size={18} /> Cancelar
-                </button>
-                <button 
-                    onClick={handleSave}
-                    className="px-6 py-2 bg-family-600 text-white rounded-lg hover:bg-family-700 flex items-center gap-2"
-                >
-                    <Save size={18} /> Guardar Cambios
-                </button>
-            </div>
+            {editForm.sections?.map((section, index) => (
+               <div key={section.id} className="relative bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+                  <button
+                    onClick={() => removeSection(section.id)}
+                    className="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-full transition"
+                    title="Eliminar esta sección"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <h5 className="text-xs font-bold text-slate-400 uppercase mb-4">Sección {index + 1}</h5>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Título de la sección (Opcional)</label>
+                      <input
+                        className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-family-500 outline-none font-serif text-lg"
+                        value={section.title || ''}
+                        onChange={e => updateSection(section.id, 'title', e.target.value)}
+                        placeholder="Ej: Los Orígenes"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Contenido / Escrito</label>
+                      <textarea
+                        className="w-full p-3 border border-slate-200 rounded focus:ring-2 focus:ring-family-500 outline-none min-h-[120px]"
+                        value={section.content || ''}
+                        onChange={e => updateSection(section.id, 'content', e.target.value)}
+                        placeholder="Escribe aquí el texto que desees mostrar..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Imagen (Opcional)</label>
+                      <div className="mt-2 flex items-center gap-4">
+                        {section.imageUrl && (
+                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                        )}
+                        <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-family-400 hover:bg-family-50 transition">
+                          <ImageIcon className="text-slate-400" size={24} />
+                          <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, section.id)} />
+                        </label>
+                        {section.imageUrl && (
+                          <button
+                            onClick={() => updateSection(section.id, 'imageUrl', '')}
+                            className="text-xs text-red-500 hover:underline"
+                          >
+                            Eliminar imagen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+               </div>
+            ))}
+            {(!editForm.sections || editForm.sections.length === 0) && (
+                <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-slate-500">
+                    No hay secciones creadas. Haz clic en "Añadir Sección" para comenzar.
+                </div>
+            )}
+          </div>
         </div>
       ) : (
         <article className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-family-100">
-            {/* Gallery Display */}
-            {history.images && history.images.length > 0 && (
-                <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {history.images.map((img, idx) => (
-                        <div key={idx} className={`rounded-lg overflow-hidden shadow-md ${history.images && history.images.length === 1 ? 'col-span-2' : ''}`}>
-                            <img src={img} alt={`Historia ${idx}`} className="w-full h-64 md:h-80 object-cover hover:scale-105 transition duration-500" />
-                        </div>
-                    ))}
-                </div>
-            )}
+            <div className="space-y-16">
+                {history.sections?.map((section, idx) => (
+                    <div key={section.id} className="space-y-6 animate-fade-in">
+                        {section.title && (
+                            <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                                {section.title}
+                            </h3>
+                        )}
 
-            <div className="prose prose-lg prose-stone max-w-none font-serif">
-                {history.content.split('\n').map((paragraph, idx) => (
-                    paragraph ? <p key={idx} className="mb-4 text-slate-700 leading-relaxed">{paragraph}</p> : <br key={idx} />
+                        {/* Disposición en dos columnas o una sola columna si no hay imagen/texto */}
+                        <div className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}>
+                            {section.imageUrl && (
+                                <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
+                                    <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+                                        <img src={section.imageUrl} alt={section.title || "Historia Familiar"} className="w-full h-auto object-cover" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {section.content && (
+                                <div className={`w-full ${section.imageUrl ? 'md:w-1/2' : ''} prose prose-lg prose-stone max-w-none`}>
+                                    <div className="text-slate-700 leading-relaxed whitespace-pre-wrap font-serif text-justify">
+                                        {section.content}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {idx < (history.sections?.length || 0) - 1 && (
+                            <div className="w-24 h-px bg-slate-300 mx-auto mt-16"></div>
+                        )}
+                    </div>
                 ))}
+
+                {(!history.sections || history.sections.length === 0) && (
+                    <div className="min-h-[200px] flex items-center justify-center text-slate-400 italic font-serif">
+                        <p>Aún no hay historia familiar escrita.</p>
+                    </div>
+                )}
             </div>
+
             <div className="mt-12 pt-6 border-t border-slate-100 text-xs text-slate-400 italic text-right">
                 Última actualización: {new Date(history.lastUpdated).toLocaleDateString()} por {history.updatedBy}
             </div>
