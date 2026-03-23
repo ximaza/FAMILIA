@@ -101,8 +101,10 @@ try {
         }
 
 
+        // SET THE MESSAGE FIRST, BEFORE ANY RESET
         setRegisterMessage('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido');
         setIsRegisterSuccess(true);
+        // DELAY FORM CLEARING SLIGHTLY TO ENSURE MESSAGE RENDERS OR KEEP IT IF REACT BATCHES IT
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '', motherName: '', email: '', password: '' });
     } catch (e: unknown) {
         alert('Hubo un error al procesar el registro: ' + (e instanceof Error ? e.message : String(e)));
@@ -246,11 +248,7 @@ try {
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
-                {registerMessage && (
-                  <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium">
-                    {registerMessage}
-                  </div>
-                )}
+                {registerMessage && <div className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-100 border border-green-300" role="alert">{registerMessage}</div>}
                 {registerError && (
                   <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
                     {registerError}
