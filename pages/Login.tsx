@@ -101,7 +101,7 @@ try {
         }
 
 
-        setRegisterMessage('Hola, tú registro se ha enviado y pendiente de validación por administración. En breve podrás acceder a todo el contenido');
+        setRegisterMessage('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido');
         setIsRegisterSuccess(true);
         setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '', motherName: '', email: '', password: '' });
     } catch (e: unknown) {
@@ -192,29 +192,6 @@ try {
                     </button>
                 </div>
             </form>
-        ) : isRegisterSuccess ? (
-            <div className="text-center space-y-4 py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Solicitud Enviada!</h2>
-                <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium leading-relaxed">
-                    {registerMessage}
-                </div>
-                <div className="pt-6">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsRegisterSuccess(false);
-                            setIsRegistering(false);
-                            setRegisterMessage('');
-                        }}
-                        className="w-full bg-family-600 text-white py-3 rounded-lg font-bold hover:bg-family-700 shadow-md transition-colors"
-                    >
-                        Volver al Inicio de Sesión
-                    </button>
-                </div>
-            </div>
         ) : !isRegistering ? (
 
             // Login Form
@@ -269,7 +246,11 @@ try {
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
-
+                {registerMessage && (
+                  <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium">
+                    {registerMessage}
+                  </div>
+                )}
                 {registerError && (
                   <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
                     {registerError}
@@ -390,9 +371,14 @@ try {
                     </button>
                     <button 
                         type="submit"
-                        className="flex-1 bg-family-600 text-white py-3 rounded-lg font-bold hover:bg-family-700 shadow-md"
+                        disabled={!!registerMessage}
+                        className={`flex-1 text-white py-3 rounded-lg font-bold shadow-md transition-colors ${
+                            registerMessage
+                                ? 'bg-slate-400 cursor-not-allowed'
+                                : 'bg-family-600 hover:bg-family-700'
+                        }`}
                     >
-                        Enviar
+                        {registerMessage ? 'Enviado' : 'Enviar'}
                     </button>
                 </div>
             </form>
