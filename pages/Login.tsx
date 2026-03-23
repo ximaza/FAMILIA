@@ -13,6 +13,7 @@ export const Login: React.FC = () => {
   const [registerMessage, setRegisterMessage] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
+  const [mostrarExito, setMostrarExito] = useState(false);
   
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
@@ -101,6 +102,7 @@ try {
         }
 
 
+        setMostrarExito(true);
         // SET THE MESSAGE FIRST, BEFORE ANY RESET
         setRegisterMessage('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido');
         setIsRegisterSuccess(true);
@@ -248,6 +250,7 @@ try {
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
+                {mostrarExito && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">¡Registro enviado con éxito! Revisa con el administrador.</div>}
                 {registerMessage && <div className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-100 border border-green-300" role="alert">{registerMessage}</div>}
                 {registerError && (
                   <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">

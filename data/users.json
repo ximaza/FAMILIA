@@ -34,5 +34,23 @@
     "role": "member",
     "status": "pending_approval",
     "registeredAt": "2026-03-21T20:20:56.562Z"
+  },
+  {
+    "id": "1774307446887",
+    "firstName": "TestName",
+    "surnames": [
+      "MAZ",
+      "Surname2",
+      "Surname3",
+      "Surname4"
+    ],
+    "birthDate": "1990-01-01",
+    "fatherName": "Father",
+    "motherName": "Mother",
+    "email": "test2@maz.com",
+    "password": "mazarrasa123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-03-23T23:10:46.887Z"
   }
 ]
