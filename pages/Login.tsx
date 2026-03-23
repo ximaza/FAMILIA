@@ -233,7 +233,11 @@ try {
                     <p className="text-sm text-slate-500 mb-2">¿Eres nuevo en la plataforma?</p>
                     <button 
                         type="button"
-                        onClick={() => setIsRegistering(true)}
+                        onClick={() => {
+                            setIsRegistering(true);
+                            setRegisterMessage('');
+                            setRegisterError('');
+                        }}
                         className="text-family-600 font-medium hover:underline"
                     >
                         Solicitar Registro
@@ -247,12 +251,12 @@ try {
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
                 {registerMessage && (
-                  <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 text-sm font-medium">
+                  <div className="p-3 bg-green-50 text-green-700 rounded-md border border-green-200 text-sm">
                     {registerMessage}
                   </div>
                 )}
                 {registerError && (
-                  <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
+                  <div className="p-3 bg-red-50 text-red-700 rounded-md border border-red-200 text-sm">
                     {registerError}
                   </div>
                 )}
@@ -364,22 +368,23 @@ try {
                 <div className="pt-4 flex gap-3">
                     <button 
                         type="button"
-                        onClick={() => setIsRegistering(false)}
+                        onClick={() => {
+                            setIsRegistering(false);
+                            setRegisterMessage('');
+                            setRegisterError('');
+                        }}
                         className="flex-1 py-3 text-slate-600 font-medium hover:bg-slate-50 rounded-lg"
                     >
                         Cancelar
                     </button>
-                    <button 
-                        type="submit"
-                        disabled={!!registerMessage}
-                        className={`flex-1 text-white py-3 rounded-lg font-bold shadow-md transition-colors ${
-                            registerMessage
-                                ? 'bg-slate-400 cursor-not-allowed'
-                                : 'bg-family-600 hover:bg-family-700'
-                        }`}
-                    >
-                        {registerMessage ? 'Enviado' : 'Enviar'}
-                    </button>
+                    {!registerMessage && (
+                        <button
+                            type="submit"
+                            className="flex-1 bg-family-600 hover:bg-family-700 text-white py-3 rounded-lg font-bold shadow-md transition-colors"
+                        >
+                            Enviar
+                        </button>
+                    )}
                 </div>
             </form>
         )}
