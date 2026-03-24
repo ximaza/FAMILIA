@@ -8,6 +8,7 @@ import { FamilyTree } from './pages/FamilyTree';
 import { AdminPanel } from './pages/AdminPanel';
 import { Members } from './pages/Members';
 import { Profile } from './pages/Profile';
+import { Login } from './pages/Login';
 
 const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
@@ -20,7 +21,7 @@ const AppContent: React.FC = () => {
   }, [currentUser, currentPage]);
 
   if (!currentUser) {
-    return <div className="flex h-screen items-center justify-center bg-red-100 text-red-700 font-bold text-3xl">SISTEMA DE LOGIN DESACTIVADO TEMPORALMENTE (SABOTAJE) </div>;
+    return <Login />;
   }
 
   const renderPage = () => {
