@@ -2,13 +2,55 @@
   {
     "id": "admin-1",
     "firstName": "Joaquín",
-    "surnames": ["Mazarrasa", "Coll", "", ""],
+    "surnames": [
+      "Mazarrasa",
+      "Coll",
+      "",
+      ""
+    ],
     "birthDate": "1960-01-01",
-    "parentsNames": "Fundadores de la rama",
     "email": "joaquin@maz.com",
     "password": "admin123",
     "role": "admin",
     "status": "active",
-    "registeredAt": "2025-05-10T10:00:00.000Z"
+    "registeredAt": "2025-05-10T10:00:00.000Z",
+    "fatherName": "Fundadores de la rama",
+    "motherName": "Fundadora"
+  },
+  {
+    "id": "1774124456562",
+    "firstName": "Test",
+    "surnames": [
+      "Mazarrasa",
+      "García",
+      "Pérez",
+      "López"
+    ],
+    "birthDate": "1990-01-01",
+    "fatherName": "Padre",
+    "motherName": "Madre",
+    "email": "test@maz.com",
+    "password": "clave123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-03-21T20:20:56.562Z"
+  },
+  {
+    "id": "1774307446887",
+    "firstName": "TestName",
+    "surnames": [
+      "MAZ",
+      "Surname2",
+      "Surname3",
+      "Surname4"
+    ],
+    "birthDate": "1990-01-01",
+    "fatherName": "Father",
+    "motherName": "Mother",
+    "email": "test2@maz.com",
+    "password": "mazarrasa123",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-03-23T23:10:46.887Z"
   }
 ]

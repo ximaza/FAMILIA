@@ -40,7 +40,8 @@ const handleSave = async () => {
         firstName: formData.firstName || currentUser.firstName,
         surnames: (formData.surnames || currentUser.surnames || ['', '', '', '']) as [string, string, string, string],
         birthDate: formData.birthDate || currentUser.birthDate,
-        parentsNames: formData.parentsNames || currentUser.parentsNames,
+        fatherName: formData.fatherName !== undefined ? formData.fatherName : currentUser.fatherName,
+        motherName: formData.motherName !== undefined ? formData.motherName : currentUser.motherName,
         email: formData.email || currentUser.email,
         personalInfo: formData.personalInfo || '',
         password: passToUpdate,
@@ -197,16 +198,29 @@ const handleSave = async () => {
                     )}
                 </div>
 
-                <div className="col-span-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nombre de los Padres</label>
+
+                <div className="col-span-2 md:col-span-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nombre del Padre</label>
+                    {isEditing ? (
+                        <input
+                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                            value={formData.fatherName !== undefined ? formData.fatherName : currentUser.fatherName || ''}
+                            onChange={(e) => setFormData({...formData, fatherName: e.target.value})}
+                        />
+                    ) : (
+                        <p className="text-lg font-medium text-slate-800 border-b border-slate-100 pb-2">{currentUser.fatherName || 'Desconocido'}</p>
+                    )}
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nombre de la Madre</label>
                     {isEditing ? (
                         <input 
                             className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                            value={formData.parentsNames}
-                            onChange={(e) => setFormData({...formData, parentsNames: e.target.value})}
+                            value={formData.motherName !== undefined ? formData.motherName : currentUser.motherName || ''}
+                            onChange={(e) => setFormData({...formData, motherName: e.target.value})}
                         />
                     ) : (
-                        <p className="text-lg font-medium text-slate-800 border-b border-slate-100 pb-2">{currentUser.parentsNames}</p>
+                        <p className="text-lg font-medium text-slate-800 border-b border-slate-100 pb-2">{currentUser.motherName || 'Desconocida'}</p>
                     )}
                 </div>
 
