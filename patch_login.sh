@@ -1,0 +1,1 @@
+sed -i 's/w-full bg-family-700 text-white py-3 rounded-lg font-bold hover:bg-family-800 transition shadow-md/w-full bg-yellow-500 text-white py-3 rounded-lg font-bold hover:bg-yellow-600 transition shadow-md/' pages/Login.tsx

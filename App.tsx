@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
-import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Notices } from './pages/Notices';
 import { FamilyHistory } from './pages/FamilyHistory';
@@ -21,7 +20,7 @@ const AppContent: React.FC = () => {
   }, [currentUser, currentPage]);
 
   if (!currentUser) {
-    return <Login />;
+    return <div className="flex h-screen items-center justify-center bg-red-100 text-red-700 font-bold text-3xl">SISTEMA DE LOGIN DESACTIVADO TEMPORALMENTE (SABOTAJE) </div>;
   }
 
   const renderPage = () => {
