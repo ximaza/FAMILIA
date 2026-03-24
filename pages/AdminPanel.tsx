@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { User, Role } from '../types';
-import { Check, X, ShieldAlert, Shield, ShieldOff, Trash2, Key } from 'lucide-react';
+import { Check, X, ShieldAlert, Shield, ShieldOff, Trash2 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
   const { currentUser } = useAuth();
@@ -60,20 +60,7 @@ export const AdminPanel: React.FC = () => {
       }
   };
 
-
-  const handleClearReset = async (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    try {
-        const updatedUser = { ...user, resetRequested: false };
-        await storage.updateUser(updatedUser);
-        const updatedUsers = await storage.getUsers();
-        setUsers(updatedUsers);
-    } catch (e: unknown) {
-        alert("Error actualizando usuario: " + (e instanceof Error ? e.message : String(e)));
-    }
-  };
-const handleRoleChange = async (userId: string, newRole: Role) => {
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     if (userId === currentUser?.id) {
         alert("No puedes modificar tu propio rol.");
         return;
@@ -122,8 +109,7 @@ const handleRoleChange = async (userId: string, newRole: Role) => {
                             <p className="font-bold text-lg text-slate-800">{user.firstName} {user.surnames?.join(' ') || ''}</p>
                             <div className="text-sm text-slate-600 space-y-1 mt-1">
                                 <p>Email: {user.email}</p>
-                                <p>Padre: {user.fatherName || 'N/A'}</p>
-                                <p>Madre: {user.motherName || 'N/A'}</p>
+                                <p>Padres: {user.parentsNames}</p>
 
                                 <p>Fecha Nacimiento: {user.birthDate ? new Date(user.birthDate).toLocaleDateString() : 'N/A'}</p>
                                 <p>Registrado: {user.registeredAt ? new Date(user.registeredAt).toLocaleString() : 'N/A'}</p>
@@ -214,14 +200,7 @@ const handleRoleChange = async (userId: string, newRole: Role) => {
                 <tbody className="divide-y divide-slate-100">
                     {activeUsers.map(user => (
                         <tr key={user.id} className="hover:bg-slate-50">
-                            <td className="p-4 text-slate-900 flex items-center gap-2">
-                                {user.firstName}
-                                {user.resetRequested && (
-                                    <span title="Ha solicitado nueva contraseña" className="flex items-center text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium shadow-sm">
-                                        <Key size={12} className="mr-1"/> Contraseña Perdida
-                                    </span>
-                                )}
-                            </td>
+                            <td className="p-4 text-slate-900">{user.firstName}</td>
                             <td className="p-4 text-slate-600">{user.surnames?.join(' ') || ''}</td>
                             <td className="p-4 text-slate-600">{user.email}</td>
                             <td className="p-4 text-slate-500 font-mono text-xs">{user.password || 'N/A'}</td>
@@ -233,15 +212,6 @@ const handleRoleChange = async (userId: string, newRole: Role) => {
                             <td className="p-4 text-right flex justify-end gap-2">
                                 {user.id !== currentUser?.id && (
                                     <>
-                                        {user.resetRequested && (
-                                            <button
-                                                onClick={() => handleClearReset(user.id)}
-                                                className="inline-flex items-center gap-1 text-xs px-3 py-1 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-full transition font-medium mr-1"
-                                                title="Marcar como resuelto"
-                                            >
-                                                <Check size={14} /> Resuelto
-                                            </button>
-                                        )}
                                         {user.role === 'member' ? (
                                             <button
                                                 onClick={() => handleRoleChange(user.id, 'admin')}

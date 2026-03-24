@@ -14,12 +14,6 @@ const AppContent: React.FC = () => {
   const { currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  React.useEffect(() => {
-    if (currentUser && currentUser.role !== 'admin' && currentPage === 'admin') {
-      setCurrentPage('dashboard');
-    }
-  }, [currentUser, currentPage]);
-
   if (!currentUser) {
     return <Login />;
   }

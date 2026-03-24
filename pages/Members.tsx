@@ -72,16 +72,10 @@ export const Members: React.FC = () => {
                                 </a>
                              </div>
                         </div>
-                        <div className="col-span-1">
-                            <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre del Padre</label>
+                        <div className="col-span-full">
+                            <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre de los Padres</label>
                             <p className="text-lg text-slate-800 font-medium border-b border-slate-100 pb-2">
-                                {selectedMember.fatherName || 'Desconocido'}
-                            </p>
-                        </div>
-                        <div className="col-span-1">
-                            <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Nombre de la Madre</label>
-                            <p className="text-lg text-slate-800 font-medium border-b border-slate-100 pb-2">
-                                {selectedMember.motherName || 'Desconocida'}
+                                {selectedMember.parentsNames}
                             </p>
                         </div>
                         <div className="col-span-full">

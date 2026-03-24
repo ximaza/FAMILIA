@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Notice } from '../types';
-import { Plus, Tag, Wand2, X, Image as ImageIcon, Trash2, Edit2, Calendar } from 'lucide-react';
+import { Plus, Tag, Wand2, X, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { draftNoticeContent } from '../services/geminiService';
 
 export const Notices: React.FC = () => {
@@ -12,13 +12,13 @@ export const Notices: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form State
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [type, setType] = useState<Notice['type']>('general');
   const [imageUrl, setImageUrl] = useState<string>('');
-  const [eventDate, setEventDate] = useState('');
-  const [isDrafting, setIsDrafting] = useState(false);  useEffect(() => {
+  const [isDrafting, setIsDrafting] = useState(false);
+
+  useEffect(() => {
     storage.getNotices().then(setNotices);
   }, []);
 
@@ -26,68 +26,32 @@ export const Notices: React.FC = () => {
     e.preventDefault();
     if (!currentUser) return;
 
-    if (editingId) {
-      const updates: Partial<Notice> = {
-        title,
-        content,
-        type,
-        imageUrl: imageUrl,
-        ...(type === 'event' && eventDate ? { eventDate } : {})
-      };
-      // If it's not an event, explicitly remove eventDate
-      if (type !== 'event') {
-          updates.eventDate = undefined;
-      }
-      await storage.updateNotice(editingId, updates);
-    } else {
-      const newNotice: Notice = {
-        id: Date.now().toString(),
-        authorId: currentUser.id,
-        authorName: `${currentUser.firstName} ${currentUser.surnames[0]}`,
-        title,
-        content,
-        type,
-        imageUrl: imageUrl,
-        date: new Date().toISOString(),
-        ...(type === 'event' && eventDate ? { eventDate } : {})
-      };
-      await storage.addNotice(newNotice);
-    }
+    const newNotice: Notice = {
+      id: Date.now().toString(),
+      authorId: currentUser.id,
+      authorName: `${currentUser.firstName} ${currentUser.surnames[0]}`,
+      title,
+      content,
+      type,
+      imageUrl: imageUrl,
+      date: new Date().toISOString()
+    };
 
+    await storage.addNotice(newNotice);
     const updatedNotices = await storage.getNotices();
     setNotices(updatedNotices);
     resetForm();
   };
 
-  const handleEdit = (notice: Notice) => {
-    setEditingId(notice.id);
-    setTitle(notice.title);
-    setContent(notice.content);
-    setType(notice.type);
-    setImageUrl(notice.imageUrl || '');
-    setEventDate(notice.eventDate || '');
-    setShowForm(true);
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta comunicación?')) {
-      await storage.deleteNotice(id);
-      const updatedNotices = await storage.getNotices();
-      setNotices(updatedNotices);
-    }
-  };
-
   const resetForm = () => {
-    setEditingId(null);
     setTitle('');
     setContent('');
     setType('general');
     setImageUrl('');
-    setEventDate('');
     setShowForm(false);
-  };  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 800 * 1024) {
@@ -144,7 +108,7 @@ export const Notices: React.FC = () => {
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-family-200 mb-8 animate-fade-in">
-          <h3 className="text-lg font-bold mb-4 text-family-800">{editingId ? 'Editar comunicación' : 'Publicar nueva comunicación'}</h3>
+          <h3 className="text-lg font-bold mb-4 text-family-800">Publicar nueva comunicación</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-2">
@@ -172,18 +136,6 @@ export const Notices: React.FC = () => {
                 </div>
             </div>
             
-            {type === 'event' && (
-                <div className="animate-fade-in">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha del Evento</label>
-                    <input
-                        type="date"
-                        value={eventDate}
-                        onChange={(e) => setEventDate(e.target.value)}
-                        className="w-full md:w-1/3 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-400 outline-none"
-                    />
-                </div>
-            )}
-
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-sm font-medium text-slate-700">Contenido</label>
@@ -260,35 +212,10 @@ export const Notices: React.FC = () => {
                  </span>
                  <span className="text-slate-400 text-sm">{new Date(notice.date).toLocaleDateString()}</span>
               </div>
-              {(currentUser?.role === 'admin' || currentUser?.id === notice.authorId) && (
-                  <div className="flex gap-2">
-                      <button
-                          onClick={() => handleEdit(notice)}
-                          className="text-slate-400 hover:text-family-600 transition"
-                          title="Editar"
-                      >
-                          <Edit2 size={16} />
-                      </button>
-                      <button
-                          onClick={() => handleDelete(notice.id)}
-                          className="text-slate-400 hover:text-red-600 transition"
-                          title="Eliminar"
-                      >
-                          <Trash2 size={16} />
-                      </button>
-                  </div>
-              )}
             </div>
             
             <h3 className="text-xl font-bold text-slate-800 mb-3">{notice.title}</h3>
             
-            {notice.type === 'event' && notice.eventDate && (
-                <div className="flex items-center gap-2 mb-4 text-family-600 bg-family-50 w-fit px-3 py-1.5 rounded-lg border border-family-100">
-                    <Calendar size={16} />
-                    <span className="font-medium text-sm">Fecha del evento: {new Date(notice.eventDate).toLocaleDateString()}</span>
-                </div>
-            )}
-
             {notice.imageUrl && (
                 <div className="mb-4 rounded-lg overflow-hidden border border-slate-100">
                     <img src={notice.imageUrl} alt={notice.title} className="w-full h-64 object-cover" />
