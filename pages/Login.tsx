@@ -168,7 +168,7 @@ export const Login: React.FC = () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
               >
-                {isRegistering ? 'Enviar TEST JULES' : 'Entrar TEST JULES'}
+                {isRegistering ? 'Enviar' : 'Entrar'}
               </button>
             </div>
           </form>

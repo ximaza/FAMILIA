@@ -52,5 +52,24 @@
     "role": "member",
     "status": "pending_approval",
     "registeredAt": "2026-03-23T23:10:46.887Z"
+  },
+  {
+    "id": "8641f04c-0cc7-413e-81b0-a60d910304b9",
+    "firstName": "Test User",
+    "surnames": [
+      "Surname1",
+      "Surname2",
+      "Surname3",
+      "Surname4"
+    ],
+    "birthDate": "1990-01-01",
+    "fatherName": "",
+    "motherName": "",
+    "email": "test.user@example.com",
+    "password": "password123",
+    "personalInfo": "",
+    "role": "member",
+    "status": "pending_approval",
+    "registeredAt": "2026-03-24T20:42:32.646Z"
   }
 ]
