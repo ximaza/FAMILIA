@@ -13,6 +13,7 @@ export const Login: React.FC = () => {
   const [registerMessage, setRegisterMessage] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
+  const [mostrarExito, setMostrarExito] = useState(false);
   
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
@@ -23,7 +24,8 @@ export const Login: React.FC = () => {
     firstName: '',
     surname1: '', surname2: '', surname3: '', surname4: '',
     birthDate: '',
-    parentsNames: '',
+    fatherName: '',
+    motherName: '',
     email: '',
     password: ''
   });
@@ -73,7 +75,8 @@ export const Login: React.FC = () => {
         firstName: formData.firstName,
         surnames: [formData.surname1, formData.surname2, formData.surname3, formData.surname4],
         birthDate: formData.birthDate,
-        parentsNames: formData.parentsNames,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
         email: formData.email,
         password: formData.password,
         role: 'member',
@@ -98,9 +101,13 @@ try {
             console.error("Error calling email API:", error);
         }
 
+
+        setMostrarExito(true);
+        // SET THE MESSAGE FIRST, BEFORE ANY RESET
+        setRegisterMessage('Hola, tu registro se ha enviado y está pendiente de validación por administración. En breve podrás acceder a todo el contenido');
         setIsRegisterSuccess(true);
-        setIsRegistering(false);
-        setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', parentsNames: '', email: '', password: '' });
+        // DELAY FORM CLEARING SLIGHTLY TO ENSURE MESSAGE RENDERS OR KEEP IT IF REACT BATCHES IT
+        setFormData({ firstName: '', surname1: '', surname2: '', surname3: '', surname4: '', birthDate: '', fatherName: '', motherName: '', email: '', password: '' });
     } catch (e: unknown) {
         alert('Hubo un error al procesar el registro: ' + (e instanceof Error ? e.message : String(e)));
     }
@@ -264,6 +271,8 @@ try {
             <form onSubmit={handleRegister} className="space-y-4">
                 <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Solicitud de Registro</h2>
                 
+                {mostrarExito && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">¡Registro enviado con éxito! Revisa con el administrador.</div>}
+                {registerMessage && <div className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-100 border border-green-300" role="alert">{registerMessage}</div>}
                 {registerError && (
                   <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 text-sm font-medium">
                     {registerError}
@@ -330,13 +339,24 @@ try {
                 </div>
                 
                 <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre de los Padres</label>
+
+                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre del Padre</label>
                     <input 
                         required
                         className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
-                        placeholder="Padre y Madre..."
-                        value={formData.parentsNames}
-                        onChange={e => setFormData({...formData, parentsNames: e.target.value})}
+                        placeholder="Nombre del padre..."
+                        value={formData.fatherName}
+                        onChange={e => setFormData({...formData, fatherName: e.target.value})}
+                    />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Nombre de la Madre</label>
+                    <input
+                        required
+                        className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                        placeholder="Nombre de la madre..."
+                        value={formData.motherName}
+                        onChange={e => setFormData({...formData, motherName: e.target.value})}
                     />
                 </div>
 
@@ -373,9 +393,14 @@ try {
                     </button>
                     <button 
                         type="submit"
-                        className="flex-1 bg-family-600 text-white py-3 rounded-lg font-bold hover:bg-family-700 shadow-md"
+                        disabled={!!registerMessage}
+                        className={`flex-1 text-white py-3 rounded-lg font-bold shadow-md transition-colors ${
+                            registerMessage
+                                ? 'bg-slate-400 cursor-not-allowed'
+                                : 'bg-family-600 hover:bg-family-700'
+                        }`}
                     >
-                        Enviar
+                        {registerMessage ? 'Enviado' : 'Enviar'}
                     </button>
                 </div>
             </form>
