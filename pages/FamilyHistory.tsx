@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { FamilyHistory as FamilyHistoryType, HomeSection } from '../types';
+import { useTableOfContents } from '../hooks/useTableOfContents';
+import { TableOfContents } from '../components/TableOfContents';
 import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
 
 export const FamilyHistory: React.FC = () => {
@@ -9,6 +11,7 @@ export const FamilyHistory: React.FC = () => {
   const [history, setHistory] = useState<FamilyHistoryType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
+  const toc = useTableOfContents(history, '.toc-target');
 
   useEffect(() => {
     storage.getHistory().then(data => {
@@ -232,11 +235,13 @@ export const FamilyHistory: React.FC = () => {
         </div>
       ) : (
         <article className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-family-100">
+            <TableOfContents toc={toc} className="mb-16 max-w-2xl" />
+
             <div className="space-y-16">
                 {history.sections?.map((section, idx) => (
                     <div key={section.id} className="space-y-6 animate-fade-in">
                         {section.title && (
-                            <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                            <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
                                 {section.title}
                             </h3>
                         )}
