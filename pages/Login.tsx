@@ -85,7 +85,7 @@ export const Login: React.FC = () => {
                 setIsForgotPasswordSuccess(false);
                 setIsForgotPassword(false);
               }}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
               Volver al Login
             </button>
@@ -107,7 +107,7 @@ export const Login: React.FC = () => {
                 setIsRegisterSuccess(false);
                 setIsRegistering(false);
               }}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
               Volver al Login
             </button>
@@ -120,7 +120,10 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h1 className="text-center text-4xl font-extrabold text-blue-900 mb-2">
+          FAMILIA MAZARRASA
+        </h1>
+        <h2 className="mt-2 text-center text-2xl font-bold text-gray-900">
           {isForgotPassword ? 'Recuperar contraseña' : isRegistering ? 'Crear una cuenta' : 'Iniciar sesión'}
         </h2>
       </div>
@@ -225,7 +228,7 @@ export const Login: React.FC = () => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 {isForgotPassword ? 'Enviar enlace' : isRegistering ? 'Enviar' : 'Entrar'}
               </button>
