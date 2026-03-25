@@ -5,6 +5,8 @@ import { User } from '../types';
 export const Login: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isForgotPasswordSuccess, setIsForgotPasswordSuccess] = useState(false);
   const { login, register } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -17,6 +19,25 @@ export const Login: React.FC = () => {
   const [personalInfo, setPersonalInfo] = useState('');
 
   const [error, setError] = useState('');
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const res = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase() })
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      setIsForgotPasswordSuccess(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Ocurrió un error. Inténtalo de nuevo.');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +73,28 @@ export const Login: React.FC = () => {
     }
   };
 
+  if (isForgotPasswordSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+            <h2 className="text-2xl font-bold text-green-600 mb-4">Solicitud enviada</h2>
+            <p className="text-gray-600 mb-6">Si el correo existe en nuestro sistema, el administrador recibirá una notificación para restablecer tu contraseña.</p>
+            <button
+              onClick={() => {
+                setIsForgotPasswordSuccess(false);
+                setIsForgotPassword(false);
+              }}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            >
+              Volver al Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isRegisterSuccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -64,7 +107,7 @@ export const Login: React.FC = () => {
                 setIsRegisterSuccess(false);
                 setIsRegistering(false);
               }}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               Volver al Login
             </button>
@@ -78,13 +121,13 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isRegistering ? 'Crear una cuenta' : 'Iniciar sesión'}
+          {isForgotPassword ? 'Recuperar contraseña' : isRegistering ? 'Crear una cuenta' : 'Iniciar sesión'}
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit}>
             {isRegistering && (
               <>
                 <div>
@@ -150,16 +193,32 @@ export const Login: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Contraseña</label>
-              <div className="mt-1">
-                <input id="password" name="password" type="password" autoComplete={isRegistering ? "new-password" : "current-password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            {!isForgotPassword && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Contraseña</label>
+                <div className="mt-1">
+                  <input id="password" name="password" type="password" autoComplete={isRegistering ? "new-password" : "current-password"} required={!isForgotPassword} value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                </div>
               </div>
-            </div>
+            )}
 
             {error && (
               <div className="text-red-600 text-sm font-medium text-center bg-red-50 p-2 rounded">
                 {error}
+              </div>
+            )}
+
+            {!isForgotPassword && !isRegistering && (
+              <div className="flex items-center justify-between mt-2">
+                <div className="text-sm">
+                  <button
+                    type="button"
+                    onClick={() => { setIsForgotPassword(true); setError(''); }}
+                    className="font-medium text-blue-600 hover:text-blue-500"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
               </div>
             )}
 
@@ -168,22 +227,35 @@ export const Login: React.FC = () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
               >
-                {isRegistering ? 'Enviar' : 'Entrar'}
+                {isForgotPassword ? 'Enviar enlace' : isRegistering ? 'Enviar' : 'Entrar'}
               </button>
             </div>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsRegistering(!isRegistering);
-                setError('');
-              }}
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
-              {isRegistering ? '¿Ya tienes una cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
-            </button>
+          <div className="mt-6 text-center flex flex-col space-y-2">
+            {isForgotPassword ? (
+              <button
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setError('');
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
+                Volver al inicio de sesión
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setError('');
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
+                {isRegistering ? '¿Ya tienes una cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+              </button>
+            )}
           </div>
+
         </div>
       </div>
     </div>
