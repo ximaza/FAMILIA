@@ -3,12 +3,15 @@ import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { HomePageContent, HomeSection } from '../types';
+import { useTableOfContents } from '../hooks/useTableOfContents';
+import { TableOfContents } from '../components/TableOfContents';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
+  const toc = useTableOfContents(content, '.toc-target');
 
   useEffect(() => {
     storage.getHomePage().then(data => {
@@ -242,11 +245,13 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             </h2>
           </header>
 
+          <TableOfContents toc={toc} />
+
           <div className="max-w-4xl mx-auto space-y-16">
             {content.sections?.map((section, idx) => (
                 <div key={section.id} className="space-y-6 animate-fade-in">
                     {section.title && (
-                        <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                        <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
                             {section.title}
                         </h3>
                     )}
