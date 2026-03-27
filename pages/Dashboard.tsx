@@ -5,6 +5,7 @@ import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-r
 import { HomePageContent, HomeSection } from '../types';
 import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
+import { compressImage } from '../utils/image';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();

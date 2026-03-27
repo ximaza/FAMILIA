@@ -6,6 +6,7 @@ import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
 import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2, ArrowUp, ArrowDown, ZoomIn } from 'lucide-react';
 import Lightbox from '../components/Lightbox';
+import { compressImage } from '../utils/image';
 
 export const FamilyHistory: React.FC = () => {
   const { currentUser } = useAuth();
@@ -84,30 +85,28 @@ export const FamilyHistory: React.FC = () => {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-          alert("La imagen es demasiado grande. Máximo 800KB.");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        const compressedImage = await compressImage(file);
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec => {
             if (sec.id === sectionId) {
                 if (sec.tipo === 'imagen') {
-                    return { ...sec, src: reader.result as string };
+                    return { ...sec, src: compressedImage };
                 }
-                return { ...sec, imageUrl: reader.result as string };
+                return { ...sec, imageUrl: compressedImage };
             }
             return sec;
           })
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error compressing image", error);
+        alert("Hubo un error al procesar la imagen. Intenta con otra.");
+      }
     }
   };
 
