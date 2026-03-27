@@ -45,9 +45,18 @@ export interface GeneanetConfig {
 
 export interface HomeSection {
   id: string;
+  // Legacy fields
   title?: string;
   content?: string;
   imageUrl?: string;
+
+  // New block renderer fields
+  tipo?: 'texto' | 'imagen';
+  contenido?: string; // Text content
+  src?: string; // Image URL
+  caption?: string; // Image caption
+  posicion?: 'izquierda' | 'derecha' | 'centro' | 'ancho_completo'; // Image alignment
+  aspectRatio?: string; // To prevent layout shifts (e.g., '16/9')
 }
 
 export interface HomePageContent {
