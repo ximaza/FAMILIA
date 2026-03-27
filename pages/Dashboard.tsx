@@ -10,6 +10,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const { currentUser } = useAuth();
   const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
   const toc = useTableOfContents(content, '.toc-target');
 
@@ -52,13 +53,21 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
   const handleSave = async () => {
     if (!editForm) return;
-    const updatedContent = {
-      ...editForm,
-      lastUpdated: new Date().toISOString()
-    };
-    await storage.saveHomePage(updatedContent);
-    setContent(updatedContent);
-    setIsEditing(false);
+    setIsSaving(true);
+    try {
+        const updatedContent = {
+          ...editForm,
+          lastUpdated: new Date().toISOString()
+        };
+        await storage.saveHomePage(updatedContent);
+        setContent(updatedContent);
+        setIsEditing(false);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Error al guardar: " + msg + ". Si tienes muchas imágenes, intenta reducir su tamaño.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
@@ -133,12 +142,13 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
               >
                 <X size={24} />
               </button>
-              <button 
+              <button
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-turquoise-600 text-white px-4 py-2 rounded-lg hover:bg-turquoise-700 transition shadow-md"
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition shadow-md ${isSaving ? 'bg-turquoise-400 cursor-not-allowed text-white/80' : 'bg-turquoise-600 hover:bg-turquoise-700 text-white'}`}
               >
-                <Save size={18} />
-                <span>Guardar Cambios</span>
+                <Save size={18} className={isSaving ? "animate-pulse" : ""} />
+                <span>{isSaving ? "Guardando..." : "Guardar Cambios"}</span>
               </button>
             </div>
           </div>

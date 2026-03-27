@@ -61,7 +61,7 @@ async function startServer() {
     return { user, pass };
   };
 
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '50mb' }));
 
   const DATA_DIR = path.join(__dirname, "data");
 
