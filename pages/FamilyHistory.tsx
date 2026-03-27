@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { FamilyHistory as FamilyHistoryType, HomeSection } from '../types';
-import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { useTableOfContents } from '../hooks/useTableOfContents';
+import { TableOfContents } from '../components/TableOfContents';
+import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2, ArrowUp, ArrowDown, ZoomIn } from 'lucide-react';
+import Lightbox from '../components/Lightbox';
 
 export const FamilyHistory: React.FC = () => {
   const { currentUser } = useAuth();
   const [history, setHistory] = useState<FamilyHistoryType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeImage, setActiveImage] = useState<{src: string, caption?: string} | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
+  const toc = useTableOfContents(history, '.toc-target');
 
   useEffect(() => {
     storage.getHistory().then(data => {
@@ -60,14 +66,22 @@ export const FamilyHistory: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser || !editForm) return;
-    const newHistory: FamilyHistoryType = {
-        ...editForm,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: currentUser.firstName
-    };
-    await storage.saveHistory(newHistory);
-    setHistory(newHistory);
-    setIsEditing(false);
+    setIsSaving(true);
+    try {
+        const newHistory: FamilyHistoryType = {
+            ...editForm,
+            lastUpdated: new Date().toISOString(),
+            updatedBy: currentUser.firstName
+        };
+        await storage.saveHistory(newHistory);
+        setHistory(newHistory);
+        setIsEditing(false);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Error al guardar: " + msg + ". Si tienes muchas imágenes, intenta reducir su tamaño.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
@@ -82,21 +96,58 @@ export const FamilyHistory: React.FC = () => {
         if (!editForm) return;
         setEditForm({
           ...editForm,
-          sections: editForm.sections?.map(sec =>
-            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
-          )
+          sections: editForm.sections?.map(sec => {
+            if (sec.id === sectionId) {
+                if (sec.tipo === 'imagen') {
+                    return { ...sec, src: reader.result as string };
+                }
+                return { ...sec, imageUrl: reader.result as string };
+            }
+            return sec;
+          })
         });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const addSection = () => {
+  const addSection = (tipo: 'texto' | 'imagen' | 'legacy' = 'legacy') => {
     if (!editForm) return;
+    const newSection: HomeSection = { id: 'section-' + Date.now() };
+    if (tipo === 'texto') {
+        newSection.tipo = 'texto';
+        newSection.contenido = '';
+    } else if (tipo === 'imagen') {
+        newSection.tipo = 'imagen';
+        newSection.src = '';
+        newSection.posicion = 'centro';
+    } else {
+        newSection.title = '';
+        newSection.content = '';
+        newSection.imageUrl = '';
+    }
     setEditForm({
       ...editForm,
-      sections: [...(editForm.sections || []), { id: 'section-' + Date.now(), title: '', content: '', imageUrl: '' }]
+      sections: [...(editForm.sections || []), newSection]
     });
+  };
+
+  const moveSectionUp = (index: number) => {
+    if (!editForm || index === 0) return;
+    const newSections = [...(editForm.sections || [])];
+    const temp = newSections[index - 1];
+    newSections[index - 1] = newSections[index];
+    newSections[index] = temp;
+    setEditForm({ ...editForm, sections: newSections });
+  };
+
+  const moveSectionDown = (index: number) => {
+    if (!editForm || !editForm.sections || index === editForm.sections.length - 1) return;
+    const newSections = [...editForm.sections];
+    const temp = newSections[index + 1];
+    newSections[index + 1] = newSections[index];
+    newSections[index] = temp;
+    setEditForm({ ...editForm, sections: newSections });
   };
 
   const removeSection = (sectionId: string) => {
@@ -153,10 +204,11 @@ export const FamilyHistory: React.FC = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-family-600 text-white px-4 py-2 rounded-lg hover:bg-family-700 transition shadow-md"
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition shadow-md ${isSaving ? 'bg-family-400 cursor-not-allowed text-white/80' : 'bg-family-600 hover:bg-family-700 text-white'}`}
               >
-                <Save size={18} />
-                <span>Guardar Cambios</span>
+                <Save size={18} className={isSaving ? "animate-pulse" : ""} />
+                <span>{isSaving ? "Guardando..." : "Guardar Cambios"}</span>
               </button>
             </div>
           </div>
@@ -164,9 +216,17 @@ export const FamilyHistory: React.FC = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
-               <button onClick={addSection} className="flex items-center gap-1 text-sm bg-family-100 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-200 transition">
-                  <PlusCircle size={16} /> Añadir Sección
-               </button>
+               <div className="flex gap-2">
+                 <button onClick={() => addSection('texto')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-100 transition shadow-sm">
+                    <PlusCircle size={14} /> Texto
+                 </button>
+                 <button onClick={() => addSection('imagen')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-100 transition shadow-sm">
+                    <ImageIcon size={14} /> Imagen
+                 </button>
+                 <button onClick={() => addSection('legacy')} className="flex items-center gap-1 text-sm bg-family-100 border border-family-300 text-family-800 px-3 py-1.5 rounded-lg hover:bg-family-200 transition shadow-sm" title="Bloque antiguo (Título + Texto + Imagen lateral)">
+                    <PlusCircle size={14} /> Bloque Clásico
+                 </button>
+               </div>
             </div>
 
             {editForm.sections?.map((section, index) => (
@@ -178,9 +238,78 @@ export const FamilyHistory: React.FC = () => {
                   >
                     <Trash2 size={16} />
                   </button>
-                  <h5 className="text-xs font-bold text-slate-400 uppercase mb-4">Sección {index + 1}</h5>
+                  <div className="absolute top-4 right-14 flex gap-1">
+                    <button onClick={() => moveSectionUp(index)} className="text-slate-400 hover:text-family-600 bg-slate-50 p-2 rounded-full transition" title="Mover Arriba"><ArrowUp size={16}/></button>
+                    <button onClick={() => moveSectionDown(index)} className="text-slate-400 hover:text-family-600 bg-slate-50 p-2 rounded-full transition" title="Mover Abajo"><ArrowDown size={16}/></button>
+                  </div>
+                  <h5 className="text-xs font-bold text-slate-400 uppercase mb-4">
+                    Bloque {index + 1} <span className="text-family-500 bg-family-50 px-2 py-0.5 rounded-full ml-2 text-[10px]">{section.tipo || 'Clásico'}</span>
+                  </h5>
 
                   <div className="space-y-4">
+                    {section.tipo === 'texto' && (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 mb-1">Contenido / Escrito</label>
+                          <textarea
+                            className="w-full p-3 border border-slate-200 rounded focus:ring-2 focus:ring-family-500 outline-none min-h-[120px]"
+                            value={section.contenido || ''}
+                            onChange={e => updateSection(section.id, 'contenido', e.target.value)}
+                            placeholder="Escribe aquí el texto que desees mostrar..."
+                          />
+                        </div>
+                    )}
+                    {section.tipo === 'imagen' && (
+                        <div className="space-y-4 border border-slate-100 bg-slate-50 p-4 rounded-lg">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Imagen</label>
+                            <div className="mt-2 flex items-center gap-4">
+                                {section.src && (
+                                <img src={section.src} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                                )}
+                                <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-family-400 hover:bg-family-100 transition bg-white">
+                                <ImageIcon className="text-slate-400" size={24} />
+                                <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, section.id)} />
+                                </label>
+                                {section.src && (
+                                <button
+                                    onClick={() => updateSection(section.id, 'src', '')}
+                                    className="text-xs text-red-500 hover:underline"
+                                >
+                                    Eliminar imagen
+                                </button>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2">* Para mejor rendimiento web, se recomienda subir imágenes en formato WebP.</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Pie de foto (Opcional)</label>
+                                <input
+                                    className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-family-500 outline-none"
+                                    value={section.caption || ''}
+                                    onChange={e => updateSection(section.id, 'caption', e.target.value)}
+                                    placeholder="Ej: El abuelo en 1950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1">Alineación</label>
+                                <select
+                                    className="w-full p-2 border border-slate-200 rounded focus:ring-2 focus:ring-family-500 outline-none bg-white"
+                                    value={section.posicion || 'centro'}
+                                    onChange={e => updateSection(section.id, 'posicion', e.target.value)}
+                                >
+                                    <option value="izquierda">Izquierda (Texto rodea por derecha)</option>
+                                    <option value="derecha">Derecha (Texto rodea por izquierda)</option>
+                                    <option value="centro">Centro (Estándar)</option>
+                                    <option value="ancho_completo">Ancho Completo (Imagen grande)</option>
+                                </select>
+                              </div>
+                          </div>
+                        </div>
+                    )}
+                    {!section.tipo && (
+                    <>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-1">Título de la sección (Opcional)</label>
                       <input
@@ -220,6 +349,8 @@ export const FamilyHistory: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    </>
+                    )}
                   </div>
                </div>
             ))}
@@ -232,35 +363,89 @@ export const FamilyHistory: React.FC = () => {
         </div>
       ) : (
         <article className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-family-100">
-            <div className="space-y-16">
+            <TableOfContents toc={toc} className="mb-16 max-w-2xl" />
+
+            <div className="space-y-8 editorial-content clearfix relative">
+                <Lightbox
+                  isOpen={!!activeImage}
+                  src={activeImage?.src || ''}
+                  caption={activeImage?.caption}
+                  onClose={() => setActiveImage(null)}
+                />
+
                 {history.sections?.map((section, idx) => (
-                    <div key={section.id} className="space-y-6 animate-fade-in">
-                        {section.title && (
-                            <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
-                                {section.title}
-                            </h3>
+                    <div key={section.id} className="animate-fade-in clearfix mb-8">
+                        {!section.tipo && (
+                            <div className="space-y-6 clear-both">
+                                {section.title && (
+                                    <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                                        {section.title}
+                                    </h3>
+                                )}
+
+                                <div className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}>
+                                    {section.imageUrl && (
+                                        <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
+                                            <div
+                                              className="rounded-2xl overflow-hidden shadow-xl border-4 border-white cursor-zoom-in group relative bg-slate-100 aspect-video flex items-center justify-center"
+                                              onClick={() => setActiveImage({ src: section.imageUrl as string, caption: section.title })}
+                                            >
+                                                <img src={section.imageUrl} alt={section.title || "Historia Familiar"} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                    <ZoomIn className="text-white drop-shadow-md" size={32} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {section.content && (
+                                        <div className={`w-full ${section.imageUrl ? 'md:w-1/2' : ''} prose prose-lg prose-stone max-w-none`}>
+                                            <div className="text-slate-700 leading-relaxed whitespace-pre-wrap font-serif text-justify">
+                                                {section.content}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {idx < (history.sections?.length || 0) - 1 && !history.sections[idx+1].tipo && (
+                                    <div className="w-24 h-px bg-slate-300 mx-auto mt-16"></div>
+                                )}
+                            </div>
                         )}
 
-                        {/* Disposición en dos columnas o una sola columna si no hay imagen/texto */}
-                        <div className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 items-center`}>
-                            {section.imageUrl && (
-                                <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
-                                    <div className="rounded-2xl overflow-hidden shadow-xl border-4 border-white">
-                                        <img src={section.imageUrl} alt={section.title || "Historia Familiar"} className="w-full h-auto object-cover" />
-                                    </div>
-                                </div>
-                            )}
+                        {section.tipo === 'texto' && (
+                            <div className="prose prose-lg prose-stone max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap font-serif text-justify">
+                                {section.contenido}
+                            </div>
+                        )}
 
-                            {section.content && (
-                                <div className={`w-full ${section.imageUrl ? 'md:w-1/2' : ''} prose prose-lg prose-stone max-w-none`}>
-                                    <div className="text-slate-700 leading-relaxed whitespace-pre-wrap font-serif text-justify">
-                                        {section.content}
+                        {section.tipo === 'imagen' && section.src && (
+                            <figure
+                                className={`
+                                    cursor-zoom-in group relative rounded-lg overflow-hidden shadow-lg border border-slate-100 bg-slate-50
+                                    ${section.posicion === 'izquierda' ? 'float-left mr-8 mb-4 w-full md:w-1/2 lg:w-1/3' : ''}
+                                    ${section.posicion === 'derecha' ? 'float-right ml-8 mb-4 w-full md:w-1/2 lg:w-1/3' : ''}
+                                    ${section.posicion === 'ancho_completo' ? 'w-full clear-both my-12' : ''}
+                                    ${(!section.posicion || section.posicion === 'centro') ? 'w-full md:w-3/4 mx-auto clear-both my-8' : ''}
+                                `}
+                                onClick={() => setActiveImage({ src: section.src as string, caption: section.caption })}
+                            >
+                                <div className="relative aspect-video flex items-center justify-center bg-slate-100">
+                                    <img
+                                        src={section.src}
+                                        alt={section.caption || "Imagen de la historia"}
+                                        loading="lazy"
+                                        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105`}
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+                                        <ZoomIn className="text-white drop-shadow-md" size={32} />
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                        {idx < (history.sections?.length || 0) - 1 && (
-                            <div className="w-24 h-px bg-slate-300 mx-auto mt-16"></div>
+                                {section.caption && (
+                                    <figcaption className="text-center p-3 bg-white text-sm text-slate-500 font-serif italic border-t border-slate-100 relative z-20">
+                                        {section.caption}
+                                    </figcaption>
+                                )}
+                            </figure>
                         )}
                     </div>
                 ))}

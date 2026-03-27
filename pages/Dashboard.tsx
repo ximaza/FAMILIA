@@ -3,12 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { HomePageContent, HomeSection } from '../types';
+import { useTableOfContents } from '../hooks/useTableOfContents';
+import { TableOfContents } from '../components/TableOfContents';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
+  const toc = useTableOfContents(content, '.toc-target');
 
   useEffect(() => {
     storage.getHomePage().then(data => {
@@ -49,13 +53,21 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
   const handleSave = async () => {
     if (!editForm) return;
-    const updatedContent = {
-      ...editForm,
-      lastUpdated: new Date().toISOString()
-    };
-    await storage.saveHomePage(updatedContent);
-    setContent(updatedContent);
-    setIsEditing(false);
+    setIsSaving(true);
+    try {
+        const updatedContent = {
+          ...editForm,
+          lastUpdated: new Date().toISOString()
+        };
+        await storage.saveHomePage(updatedContent);
+        setContent(updatedContent);
+        setIsEditing(false);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Error al guardar: " + msg + ". Si tienes muchas imágenes, intenta reducir su tamaño.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
@@ -130,12 +142,13 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
               >
                 <X size={24} />
               </button>
-              <button 
+              <button
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-turquoise-600 text-white px-4 py-2 rounded-lg hover:bg-turquoise-700 transition shadow-md"
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition shadow-md ${isSaving ? 'bg-turquoise-400 cursor-not-allowed text-white/80' : 'bg-turquoise-600 hover:bg-turquoise-700 text-white'}`}
               >
-                <Save size={18} />
-                <span>Guardar Cambios</span>
+                <Save size={18} className={isSaving ? "animate-pulse" : ""} />
+                <span>{isSaving ? "Guardando..." : "Guardar Cambios"}</span>
               </button>
             </div>
           </div>
@@ -242,11 +255,13 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
             </h2>
           </header>
 
+          <TableOfContents toc={toc} />
+
           <div className="max-w-4xl mx-auto space-y-16">
             {content.sections?.map((section, idx) => (
                 <div key={section.id} className="space-y-6 animate-fade-in">
                     {section.title && (
-                        <h3 className="text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
+                        <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
                             {section.title}
                         </h3>
                     )}
