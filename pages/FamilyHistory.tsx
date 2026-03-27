@@ -12,6 +12,7 @@ export const FamilyHistory: React.FC = () => {
   const [history, setHistory] = useState<FamilyHistoryType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [activeImage, setActiveImage] = useState<{src: string, caption?: string} | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
   const toc = useTableOfContents(history, '.toc-target');
 
@@ -65,14 +66,22 @@ export const FamilyHistory: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser || !editForm) return;
-    const newHistory: FamilyHistoryType = {
-        ...editForm,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: currentUser.firstName
-    };
-    await storage.saveHistory(newHistory);
-    setHistory(newHistory);
-    setIsEditing(false);
+    setIsSaving(true);
+    try {
+        const newHistory: FamilyHistoryType = {
+            ...editForm,
+            lastUpdated: new Date().toISOString(),
+            updatedBy: currentUser.firstName
+        };
+        await storage.saveHistory(newHistory);
+        setHistory(newHistory);
+        setIsEditing(false);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        alert("Error al guardar: " + msg + ". Si tienes muchas imágenes, intenta reducir su tamaño.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
@@ -195,10 +204,11 @@ export const FamilyHistory: React.FC = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 bg-family-600 text-white px-4 py-2 rounded-lg hover:bg-family-700 transition shadow-md"
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition shadow-md ${isSaving ? 'bg-family-400 cursor-not-allowed text-white/80' : 'bg-family-600 hover:bg-family-700 text-white'}`}
               >
-                <Save size={18} />
-                <span>Guardar Cambios</span>
+                <Save size={18} className={isSaving ? "animate-pulse" : ""} />
+                <span>{isSaving ? "Guardando..." : "Guardar Cambios"}</span>
               </button>
             </div>
           </div>
