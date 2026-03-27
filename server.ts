@@ -398,9 +398,11 @@ app.post("/api/users", async (req, res) => {
         await writeData("history.json", history);
         res.json(history);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating history:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      // Give more specific error message if it's a payload/size error
+      const msg = error.message || "Internal Server Error";
+      res.status(500).json({ error: msg.includes('request entity too large') ? "El archivo enviado es demasiado grande para el servidor." : msg });
     }
   });
 

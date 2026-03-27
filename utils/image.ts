@@ -1,36 +1,29 @@
-export const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
+import imageCompression from 'browser-image-compression';
 
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
+export const compressImage = async (file: File): Promise<string> => {
+  const options = {
+    maxSizeMB: 0.5,          // Set max size to 500KB
+    maxWidthOrHeight: 1200,  // Reduce image resolution
+    useWebWorker: true,
+    fileType: "image/webp"   // Convert to lightweight WebP format
+  };
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error("Could not get canvas context"));
-          return;
-        }
+  try {
+    const compressedFile = await imageCompression(file, options);
 
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress using WebP
-        const compressedDataUrl = canvas.toDataURL('image/webp', quality);
-        resolve(compressedDataUrl);
-      };
-      img.onerror = (error) => reject(error);
-    };
-    reader.onerror = (error) => reject(error);
-  });
+    // Convert back to Base64 to save in the JSON config
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(compressedFile);
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.onerror = (error) => {
+            reject(error);
+        };
+    });
+  } catch (error) {
+    console.error("Compression failed:", error);
+    throw error;
+  }
 };
