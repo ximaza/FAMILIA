@@ -5,6 +5,7 @@ import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-r
 import { HomePageContent, HomeSection } from '../types';
 import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
+import { compressImage, uploadImage } from '../utils/image';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
@@ -178,9 +179,12 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
-               <button onClick={addSection} className="flex items-center gap-1 text-sm bg-turquoise-100 text-turquoise-700 px-3 py-1.5 rounded-lg hover:bg-turquoise-200 transition">
+               <div className="flex items-center gap-4">
+                 {isUploadingImage && <span className="text-sm text-turquoise-600 animate-pulse italic">Subiendo imagen...</span>}
+                 <button onClick={addSection} className="flex items-center gap-1 text-sm bg-turquoise-100 text-turquoise-700 px-3 py-1.5 rounded-lg hover:bg-turquoise-200 transition">
                   <PlusCircle size={16} /> Añadir Sección
-               </button>
+                 </button>
+               </div>
             </div>
 
             {editForm.sections?.map((section, index) => (

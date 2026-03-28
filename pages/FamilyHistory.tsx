@@ -6,6 +6,7 @@ import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
 import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2, ArrowUp, ArrowDown, ZoomIn } from 'lucide-react';
 import Lightbox from '../components/Lightbox';
+import { compressImage, uploadImage } from '../utils/image';
 
 export const FamilyHistory: React.FC = () => {
   const { currentUser } = useAuth();
@@ -84,30 +85,34 @@ export const FamilyHistory: React.FC = () => {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-          alert("La imagen es demasiado grande. Máximo 800KB.");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        setIsUploadingImage(true);
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, 'history');
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec => {
             if (sec.id === sectionId) {
                 if (sec.tipo === 'imagen') {
-                    return { ...sec, src: reader.result as string };
+                    return { ...sec, src: publicUrl };
                 }
-                return { ...sec, imageUrl: reader.result as string };
+                return { ...sec, imageUrl: publicUrl };
             }
             return sec;
           })
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 
@@ -216,7 +221,9 @@ export const FamilyHistory: React.FC = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
-               <div className="flex gap-2">
+               <div className="flex items-center gap-4">
+                 {isUploadingImage && <span className="text-sm text-family-500 animate-pulse italic">Subiendo imagen...</span>}
+                 <div className="flex gap-2">
                  <button onClick={() => addSection('texto')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-100 transition shadow-sm">
                     <PlusCircle size={14} /> Texto
                  </button>
@@ -226,6 +233,7 @@ export const FamilyHistory: React.FC = () => {
                  <button onClick={() => addSection('legacy')} className="flex items-center gap-1 text-sm bg-family-100 border border-family-300 text-family-800 px-3 py-1.5 rounded-lg hover:bg-family-200 transition shadow-sm" title="Bloque antiguo (Título + Texto + Imagen lateral)">
                     <PlusCircle size={14} /> Bloque Clásico
                  </button>
+               </div>
                </div>
             </div>
 
