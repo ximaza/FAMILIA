@@ -27,3 +27,27 @@ export const compressImage = async (file: File): Promise<string> => {
     throw error;
   }
 };
+
+export const uploadImage = async (base64Image: string, folder: string = 'images'): Promise<string> => {
+  const userId = localStorage.getItem('maz_current_user_id');
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-user-id': userId
+    },
+    body: JSON.stringify({ image: base64Image, folder })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.url; // Returns the public URL (or the base64 string if in local fallback)
+};
