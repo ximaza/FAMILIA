@@ -408,64 +408,6 @@ app.post("/api/users", async (req, res) => {
     }
   });
 
-  app.get("/api/homepage", async (req, res) => {
-    try {
-      if (db) {
-        const doc = await db.collection("config").doc("homepage").get();
-        res.json(doc.exists ? doc.data() : defaultHomepage);
-      } else {
-        const homepage = await readData("homepage.json");
-        res.json(homepage || defaultHomepage);
-      }
-    } catch (error) {
-      console.error("Error fetching homepage:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  });
-
-
-  // old api upload replaced
-    try {
-      const { image, folder = 'images' } = req.body;
-      if (!image || !image.startsWith('data:image')) {
-        return res.status(400).json({ error: "Invalid image format" });
-      }
-
-      if (bucket) {
-        // Extract base64 data and mime type
-        const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (!matches || matches.length !== 3) {
-          return res.status(400).json({ error: "Invalid base64 string" });
-        }
-
-        const mimeType = matches[1];
-        const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-
-        // Generate unique filename
-        const extension = mimeType.split('/')[1] || 'webp';
-        const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
-
-        const file = bucket.file(filename);
-
-        await file.save(buffer, {
-          metadata: { contentType: mimeType },
-          public: true
-        });
-
-        // Get public URL using the proper format for Firebase Storage
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        res.json({ url: publicUrl });
-      } else {
-        // Fallback for local dev without firebase: just return the base64 string
-        res.json({ url: image });
-      }
-    } catch (error: any) {
-      console.error("Error uploading image:", error);
-      res.status(500).json({ error: error.message || "Failed to upload image" });
-    }
-  });
-
 
   app.post("/api/upload", isAuthorizedToModify, async (req, res) => {
     try {
