@@ -11,7 +11,7 @@ export const FamilyHistory: React.FC = () => {
   const [history, setHistory] = useState<FamilyHistoryType | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
-  const toc = useTableOfContents(history, '.toc-target');
+  const toc = useTableOfContents(history?.sections, '.toc-target');
 
   useEffect(() => {
     storage.getHistory().then(data => {
