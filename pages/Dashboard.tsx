@@ -12,6 +12,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
   const toc = useTableOfContents(content?.sections, '.toc-target');
 
@@ -71,24 +72,26 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-          alert("La imagen es demasiado grande. Máximo 800KB.");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        setIsUploadingImage(true);
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, "homepage");
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec =>
-            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
+            sec.id === sectionId ? { ...sec, imageUrl: publicUrl } : sec
           )
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
+      } finally {
+        setIsUploadingImage(false);
+      }
     }
   };
 
@@ -262,7 +265,10 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
           <TableOfContents toc={toc} />
 
           <div className="max-w-4xl mx-auto space-y-16">
-            {content.sections?.map((section, idx) => (
+            {((content.sections && content.sections.length > 0)
+              ? content.sections
+              : [{ id: "legacy", content: content.bodyContent, imageUrl: content.imageUrl }]
+            ).filter(s => s.content || s.contenido || s.imageUrl || s.src).map((section, idx) => (
                 <div key={section.id} className="space-y-6 animate-fade-in">
                     {section.title && (
                         <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">
