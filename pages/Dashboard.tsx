@@ -5,14 +5,12 @@ import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-r
 import { HomePageContent, HomeSection } from '../types';
 import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
-import { compressImage, uploadImage } from '../utils/image';
 
 export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [content, setContent] = useState<HomePageContent | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
   const toc = useTableOfContents(content?.sections, '.toc-target');
 
@@ -72,26 +70,24 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     }
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        setIsUploadingImage(true);
-        const compressedImage = await compressImage(file);
-        const publicUrl = await uploadImage(compressedImage, "homepage");
+      if (file.size > 800 * 1024) {
+          alert("La imagen es demasiado grande. Máximo 800KB.");
+          return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec =>
-            sec.id === sectionId ? { ...sec, imageUrl: publicUrl } : sec
+            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
           )
         });
-      } catch (error) {
-        console.error("Error compressing/uploading image", error);
-        alert("Hubo un error al subir la imagen. Intenta con otra.");
-      } finally {
-        setIsUploadingImage(false);
-      }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -182,12 +178,9 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
-               <div className="flex items-center gap-4">
-                 {isUploadingImage && <span className="text-sm text-turquoise-600 animate-pulse italic">Subiendo imagen...</span>}
-                 <button onClick={addSection} className="flex items-center gap-1 text-sm bg-turquoise-100 text-turquoise-700 px-3 py-1.5 rounded-lg hover:bg-turquoise-200 transition">
+               <button onClick={addSection} className="flex items-center gap-1 text-sm bg-turquoise-100 text-turquoise-700 px-3 py-1.5 rounded-lg hover:bg-turquoise-200 transition">
                   <PlusCircle size={16} /> Añadir Sección
-                 </button>
-               </div>
+               </button>
             </div>
 
             {editForm.sections?.map((section, index) => (
@@ -265,10 +258,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
           <TableOfContents toc={toc} />
 
           <div className="max-w-4xl mx-auto space-y-16">
-            {((content.sections && content.sections.length > 0)
-              ? content.sections
-              : [{ id: "legacy", content: content.bodyContent, imageUrl: content.imageUrl }]
-            ).filter(s => s.content || s.contenido || s.imageUrl || s.src).map((section, idx) => (
+            {(content.sections || [{ id: "legacy", content: content.bodyContent, imageUrl: content.imageUrl }]).filter(s => s.content || s.imageUrl).map((section, idx) => (
                 <div key={section.id} className="space-y-6 animate-fade-in">
                     {section.title && (
                         <h3 className="toc-target text-3xl font-serif font-bold text-slate-800 text-center border-b border-slate-200 pb-4 mb-8">

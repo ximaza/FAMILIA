@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { compressImage, uploadImage } from '../utils/image';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { User } from '../types';
@@ -60,20 +61,17 @@ const handleSave = async () => {
       setFormData({ ...formData, surnames: newSurnames as [string, string, string, string] });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Size limit check (e.g., 800KB) to prevent localStorage quota exceeded
-      if (file.size > 800 * 1024) {
-        alert("La imagen es demasiado grande. Por favor sube una imagen menor de 800KB.");
-        return;
+      try {
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, "profiles");
+        setFormData({ ...formData, photoUrl: publicUrl });
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
       }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, photoUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
     }
   };
 

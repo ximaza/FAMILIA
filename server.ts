@@ -43,6 +43,7 @@ try {
       }),
     });
     db = admin.firestore();
+    bucket = admin.storage().bucket(`${process.env.FIREBASE_PROJECT_ID}.appspot.com`);
     console.log("Firebase initialized successfully");
   } else {
     console.warn("Firebase credentials missing. Falling back to local JSON storage.");
@@ -64,7 +65,6 @@ async function startServer() {
   };
 
   app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   const DATA_DIR = path.join(__dirname, "data");
 
@@ -404,15 +404,14 @@ app.post("/api/users", async (req, res) => {
       console.error("Error updating history:", error);
       // Give more specific error message if it's a payload/size error
       const msg = error.message || "Internal Server Error";
-      res.status(500).json({ error: msg.includes('request entity too large') ? "El archivo enviado es demasiado grande para el servidor." : msg });
+      res.status(500).json({ error: msg.includes("request entity too large") ? "El archivo enviado es demasiado grande para el servidor." : msg });
     }
   });
 
-
   app.post("/api/upload", isAuthorizedToModify, async (req, res) => {
     try {
-      const { image, folder = 'images' } = req.body;
-      if (!image || !image.startsWith('data:image')) {
+      const { image, folder = "images" } = req.body;
+      if (!image || !image.startsWith("data:image")) {
         return res.status(400).json({ error: "Invalid image format" });
       }
 
@@ -425,11 +424,11 @@ app.post("/api/users", async (req, res) => {
 
         const mimeType = matches[1];
         const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
+        const buffer = Buffer.from(base64Data, "base64");
 
         // Generate unique filename
-        const extension = mimeType.split('/')[1] || 'webp';
-        const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
+        const extension = mimeType.split("/")[1] || "webp";
+        const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.\${extension}`;
 
         const file = bucket.file(filename);
 
@@ -439,7 +438,7 @@ app.post("/api/users", async (req, res) => {
         });
 
         // Get public URL using the proper format for Firebase Storage
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/\${filename}`;
         res.json({ url: publicUrl });
       } else {
         // Fallback for local dev without firebase: just return the base64 string
@@ -448,6 +447,21 @@ app.post("/api/users", async (req, res) => {
     } catch (error: any) {
       console.error("Error uploading image:", error);
       res.status(500).json({ error: error.message || "Failed to upload image" });
+    }
+  });
+
+  app.get("/api/homepage", async (req, res) => {
+    try {
+      if (db) {
+        const doc = await db.collection("config").doc("homepage").get();
+        res.json(doc.exists ? doc.data() : defaultHomepage);
+      } else {
+        const homepage = await readData("homepage.json");
+        res.json(homepage || defaultHomepage);
+      }
+    } catch (error) {
+      console.error("Error fetching homepage:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 

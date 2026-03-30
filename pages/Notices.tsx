@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { compressImage, uploadImage } from '../utils/image';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Notice } from '../types';
@@ -87,18 +88,20 @@ export const Notices: React.FC = () => {
     setImageUrl('');
     setEventDate('');
     setShowForm(false);
-  };  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  };  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-        alert("Imagen demasiado grande. Máximo 800KB.");
-        return;
+      try {
+        setIsDrafting(true); // Using isDrafting as a proxy for a generic loading state
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, "notices");
+        setImageUrl(publicUrl);
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
+      } finally {
+        setIsDrafting(false);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
