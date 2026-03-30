@@ -14,7 +14,7 @@ export const FamilyHistory: React.FC = () => {
   const [activeImage, setActiveImage] = useState<{src: string, caption?: string} | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<FamilyHistoryType | null>(null);
-  const toc = useTableOfContents(history, '.toc-target');
+  const toc = useTableOfContents(history?.sections, '.toc-target');
 
   useEffect(() => {
     storage.getHistory().then(data => {
