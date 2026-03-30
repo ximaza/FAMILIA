@@ -13,7 +13,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<HomePageContent | null>(null);
-  const toc = useTableOfContents(content, '.toc-target');
+  const toc = useTableOfContents(content?.sections, '.toc-target');
 
   useEffect(() => {
     storage.getHomePage().then(data => {
