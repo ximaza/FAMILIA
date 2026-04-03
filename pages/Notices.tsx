@@ -3,13 +3,15 @@ import { compressImage, uploadImage } from '../utils/image';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Notice } from '../types';
-import { Plus, Tag, Wand2, X, Image as ImageIcon, Trash2, Edit2, Calendar } from 'lucide-react';
+import { Plus, Tag, Wand2, X, Image as ImageIcon, Trash2, Edit2, Calendar, ZoomIn } from 'lucide-react';
 import { draftNoticeContent } from '../services/geminiService';
+import Lightbox from '../components/Lightbox';
 
 export const Notices: React.FC = () => {
   const { currentUser } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [activeImage, setActiveImage] = useState<{src: string, caption?: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form State
@@ -19,7 +21,9 @@ export const Notices: React.FC = () => {
   const [type, setType] = useState<Notice['type']>('general');
   const [imageUrl, setImageUrl] = useState<string>('');
   const [eventDate, setEventDate] = useState('');
-  const [isDrafting, setIsDrafting] = useState(false);  useEffect(() => {
+  const [isDrafting, setIsDrafting] = useState(false);
+
+  useEffect(() => {
     storage.getNotices().then(setNotices);
   }, []);
 
@@ -68,7 +72,6 @@ export const Notices: React.FC = () => {
     setImageUrl(notice.imageUrl || '');
     setEventDate(notice.eventDate || '');
     setShowForm(true);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -94,7 +97,7 @@ export const Notices: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        setIsDrafting(true); // Using isDrafting as a proxy for a generic loading state
+        setIsDrafting(true);
         const compressedImage = await compressImage(file);
         const publicUrl = await uploadImage(compressedImage, "notices");
         setImageUrl(publicUrl);
@@ -122,7 +125,7 @@ export const Notices: React.FC = () => {
     switch(t) {
       case 'offer': return 'bg-emerald-100 text-emerald-800';
       case 'event': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-slate-100 text-slate-800';
+      default: return 'bg-white text-slate-800';
     }
   };
 
@@ -136,6 +139,13 @@ export const Notices: React.FC = () => {
 
   return (
     <div>
+      <Lightbox
+        isOpen={!!activeImage}
+        src={activeImage?.src || ''}
+        caption={activeImage?.caption}
+        onClose={() => setActiveImage(null)}
+      />
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-serif font-bold text-family-900">Comunicaciones</h2>
         <button 
@@ -295,8 +305,14 @@ export const Notices: React.FC = () => {
             )}
 
             {notice.imageUrl && (
-                <div className="mb-4 rounded-lg overflow-hidden border border-slate-100">
-                    <img src={notice.imageUrl} alt={notice.title} className="w-full h-64 object-cover" />
+                <div
+                  className="mb-4 rounded-lg overflow-hidden border border-slate-100 bg-white cursor-zoom-in group relative"
+                  onClick={() => setActiveImage({ src: notice.imageUrl as string, caption: notice.title })}
+                >
+                    <img src={notice.imageUrl} alt={notice.title} className="w-full h-64 object-contain transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+                        <ZoomIn className="text-white drop-shadow-md" size={32} />
+                    </div>
                 </div>
             )}
 
