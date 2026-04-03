@@ -428,7 +428,7 @@ app.post("/api/users", async (req, res) => {
 
         // Generate unique filename
         const extension = mimeType.split("/")[1] || "webp";
-        const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.\${extension}`;
+        const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
 
         const file = bucket.file(filename);
 
@@ -438,7 +438,7 @@ app.post("/api/users", async (req, res) => {
         });
 
         // Get public URL using the proper format for Firebase Storage
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/\${filename}`;
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
         res.json({ url: publicUrl });
       } else {
         // Fallback for local dev without firebase: just return the base64 string

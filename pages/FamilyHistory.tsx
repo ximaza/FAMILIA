@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { FamilyHistory as FamilyHistoryType, HomeSection } from '../types';
+import { compressImage, uploadImage } from '../utils/image';
 import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
 import { Edit, Save, X, Image as ImageIcon, PlusCircle, Trash2, ArrowUp, ArrowDown, ZoomIn } from 'lucide-react';
@@ -84,30 +85,32 @@ export const FamilyHistory: React.FC = () => {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-          alert("La imagen es demasiado grande. Máximo 800KB.");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      setIsSaving(true);
+      try {
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, "history");
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec => {
             if (sec.id === sectionId) {
-                if (sec.tipo === 'imagen') {
-                    return { ...sec, src: reader.result as string };
+                if (sec.tipo === "imagen") {
+                    return { ...sec, src: publicUrl };
                 }
-                return { ...sec, imageUrl: reader.result as string };
+                return { ...sec, imageUrl: publicUrl };
             }
             return sec;
           })
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
