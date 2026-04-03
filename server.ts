@@ -35,22 +35,19 @@ let db: admin.firestore.Firestore | null = null;
 let bucket: any = null;
 try {
   if (process.env.FIREBASE_PROJECT_ID) {
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.firebasestorage.app`;
+
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       }),
+      storageBucket: bucketName
     });
     db = admin.firestore();
-    // Support both old and new bucket formats
-    const bucketName = `${process.env.FIREBASE_PROJECT_ID}.firebasestorage.app`;
-    const fallbackBucketName = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+    bucket = admin.storage().bucket();
 
-    bucket = admin.storage().bucket(bucketName);
-
-    // We can't easily check if bucket exists here without a network call,
-    // so we'll just log both and hope for the best, or handle it in the upload route.
     console.log(`Firebase initialized. Using bucket: ${bucketName}`);
   } else {
     console.warn("Firebase credentials missing. Falling back to local JSON storage.");
@@ -63,67 +60,29 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
-  // Helper to get clean credentials
-  const getEmailConfig = () => {
-    const user = process.env.EMAIL_USER;
-    const pass = process.env.EMAIL_PASS;
-    
-    return { user, pass };
-  };
-
+  // Use JSON middleware with high limit for Base64 (though we prefer Storage)
   app.use(express.json({ limit: '50mb' }));
 
   const DATA_DIR = path.join(__dirname, "data");
 
-  const readData = async (filename: string) => {
-    const filePath = path.join(DATA_DIR, filename);
+  // Helper for local JSON files
+  async function readData(file: string) {
     try {
-      const data = await fs.readFile(filePath, "utf-8");
+      const data = await fs.readFile(path.join(DATA_DIR, file), "utf-8");
       return JSON.parse(data);
-    } catch (error) {
-      console.error(`Error reading ${filename}:`, error);
-      // Return empty array for known array files, empty object for others
-      if (filename.includes('users') || filename.includes('notices')) return [];
-      return {};
+    } catch (e) {
+      return null;
     }
-  };
+  }
 
-  const writeData = async (filename: string, data: any) => {
-    const filePath = path.join(DATA_DIR, filename);
-    try {
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
-      return true;
-    } catch (error) {
-      console.error(`Error writing ${filename}:`, error);
-      return false;
-    }
-  };
+  async function writeData(file: string, data: any) {
+    await fs.writeFile(path.join(DATA_DIR, file), JSON.stringify(data, null, 2));
+  }
 
-// API Routes
+  // Auth helper
   app.post("/api/login", async (req, res) => {
+    const { email, password } = req.body;
     try {
-      const { email, password } = req.body;
-
-      // EMERGENCY OVERRIDE FOR ADMIN RECOVERY
-      if (email.toLowerCase() === 'joaquin@maz.com' && password === 'admin123') {
-          const adminUser = {
-              id: "admin-1",
-              firstName: "Joaquín",
-              surnames: ["Mazarrasa", "", "", ""],
-              email: "joaquin@maz.com",
-              role: "admin",
-              status: "active"
-          };
-          // Attempt to repair DB while logging in
-          try {
-              if (db) {
-                  await db.collection("users").doc("admin-1").set({...adminUser, password: "admin123"}, { merge: true });
-              }
-          } catch(e) {}
-
-          return res.json(adminUser);
-      }
-
       let users: any[] = [];
       if (db) {
         // Optimized query per memory instructions
@@ -227,59 +186,58 @@ async function startServer() {
           });
           res.json(safeUsers);
         }
-    } catch(e) {
-        res.status(500).json({error: "Server error"});
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
-app.post("/api/users", async (req, res) => {
+  app.post("/api/users", async (req, res) => {
+    const user = req.body;
     try {
-      const newUser = req.body;
-      const email = newUser.email.toLowerCase();
-
-      let users = [];
       if (db) {
-          const snapshot = await db.collection("users").where('email', '==', email).limit(1).get();
-          if (!snapshot.empty) {
-              return res.status(409).json({ error: "El correo electrónico ya está registrado." });
-          }
-          const { id, ...data } = newUser;
-          await db.collection("users").doc(id).set(data);
-          res.json(newUser);
+        await db.collection("users").doc(user.id).set(user);
+        res.json(user);
       } else {
-          users = (await readData("users.json")) || [];
-          if (users.some((u: any) => u.email.toLowerCase() === email)) {
-              return res.status(409).json({ error: "El correo electrónico ya está registrado." });
-          }
-          users.push(newUser);
-          await writeData("users.json", users);
-          res.json(newUser);
+        const users = (await readData("users.json")) || [];
+        users.push(user);
+        await writeData("users.json", users);
+        res.json(user);
       }
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Error saving user:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
   app.put("/api/users/:id", isAuthorizedToModify, async (req, res) => {
+    const { id } = req.params;
+    const updatedUser = req.body;
     try {
-      const id = req.params.id as string;
-      const updatedUser = req.body;
       if (db) {
-        const { id: _, ...data } = updatedUser;
-        await db.collection("users").doc(id).set(data, { merge: true });
-        res.json(updatedUser);
+        // Fetch current user to preserve password if not provided
+        const doc = await db.collection("users").doc(id).get();
+        const currentUser = doc.data();
+        const finalUser = {
+            ...updatedUser,
+            password: updatedUser.password || currentUser?.password
+        };
+        await db.collection("users").doc(id).set(finalUser);
+        res.json(finalUser);
       } else {
-        let users = (await readData("users.json")) || [];
-        // Preserve password if it's missing from the payload when updating (e.g., standard user updating profile)
-        users = users.map((u: any) => {
-          if (u.id === id) {
-             return { ...u, ...updatedUser, password: updatedUser.password || u.password };
-          }
-          return u;
-        });
-        await writeData("users.json", users);
-        res.json(updatedUser);
+        const users = (await readData("users.json")) || [];
+        const index = users.findIndex((u: any) => u.id === id);
+        if (index !== -1) {
+          const finalUser = {
+              ...updatedUser,
+              password: updatedUser.password || users[index].password
+          };
+          users[index] = finalUser;
+          await writeData("users.json", users);
+          res.json(finalUser);
+        } else {
+          res.status(404).json({ error: "User not found" });
+        }
       }
     } catch (error) {
       console.error("Error updating user:", error);
@@ -288,15 +246,15 @@ app.post("/api/users", async (req, res) => {
   });
 
   app.delete("/api/users/:id", isAuthorizedToModify, async (req, res) => {
+    const { id } = req.params;
     try {
-      const id = req.params.id as string;
       if (db) {
         await db.collection("users").doc(id).delete();
         res.json({ success: true });
       } else {
-        let users = (await readData("users.json")) || [];
-        users = users.filter((u: any) => u.id !== id);
-        await writeData("users.json", users);
+        const users = (await readData("users.json")) || [];
+        const filteredUsers = users.filter((u: any) => u.id !== id);
+        await writeData("users.json", filteredUsers);
         res.json({ success: true });
       }
     } catch (error) {
@@ -309,11 +267,10 @@ app.post("/api/users", async (req, res) => {
     try {
       if (db) {
         const snapshot = await db.collection("notices").orderBy("date", "desc").get();
-        const notices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(notices);
+        res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } else {
-        const notices = await readData("notices.json");
-        res.json(notices || []);
+        const notices = (await readData("notices.json")) || [];
+        res.json(notices.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
     } catch (error) {
       console.error("Error fetching notices:", error);
@@ -323,24 +280,58 @@ app.post("/api/users", async (req, res) => {
 
   app.post("/api/notices", async (req, res) => {
     try {
-      const newNotice = req.body;
+      const notice = req.body;
+      const requestingUserId = req.headers['x-user-id'] as string;
+
+      // Enforce security: use the authenticated user ID as author
+      if (requestingUserId) {
+          notice.authorId = requestingUserId;
+      }
+
       if (db) {
-        const { id, ...data } = newNotice;
-        await db.collection("notices").doc(id).set(data);
-        res.json(newNotice);
+        const docRef = await db.collection("notices").add(notice);
+        res.json({ id: docRef.id, ...notice });
       } else {
         const notices = (await readData("notices.json")) || [];
-        notices.unshift(newNotice);
+        notices.push(notice);
         await writeData("notices.json", notices);
-        res.json(newNotice);
+        res.json(notice);
       }
     } catch (error) {
-      console.error("Error creating notice:", error);
+      console.error("Error saving notice:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
 
-  app.put("/api/notices/:id", async (req, res) => {
+  // Authorization middleware for notices (only author or admin)
+  const isAuthorizedForNotice = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const requestingUserId = req.headers['x-user-id'] as string;
+    const noticeId = req.params.id;
+
+    if (!requestingUserId) return res.status(401).json({ error: "Unauthorized" });
+
+    const role = await getUserRole(requestingUserId);
+    if (role === 'admin') return next();
+
+    try {
+        let notice: any = null;
+        if (db) {
+            const doc = await db.collection("notices").doc(noticeId).get();
+            notice = doc.exists ? doc.data() : null;
+        } else {
+            const notices = await readData("notices.json");
+            notice = notices.find((n: any) => n.id === noticeId);
+        }
+
+        if (notice && notice.authorId === requestingUserId) {
+            return next();
+        }
+    } catch (e) {}
+
+    res.status(403).json({ error: "Forbidden: Not author or admin" });
+  };
+
+  app.put("/api/notices/:id", isAuthorizedForNotice, async (req, res) => {
     try {
       const { id } = req.params;
       const updatedNotice = req.body;
@@ -364,7 +355,7 @@ app.post("/api/users", async (req, res) => {
     }
   });
 
-  app.delete("/api/notices/:id", async (req, res) => {
+  app.delete("/api/notices/:id", isAuthorizedForNotice, async (req, res) => {
     try {
       const { id } = req.params;
       if (db) {
@@ -501,7 +492,7 @@ app.post("/api/users", async (req, res) => {
 
   app.post("/api/send-welcome-email", async (req, res) => {
     const { email, name } = req.body;
-    const config = getEmailConfig();
+    const config = { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS };
 
     if (!config.user || !config.pass) {
         return res.status(500).json({ error: "Email configuration missing" });
@@ -549,7 +540,7 @@ app.post("/api/users", async (req, res) => {
 
   app.post("/api/send-approval-email", async (req, res) => {
     const { email, name } = req.body;
-    const config = getEmailConfig();
+    const config = { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS };
 
     if (!config.user || !config.pass) {
         return res.status(500).json({ error: "Email configuration missing" });
@@ -606,7 +597,7 @@ app.post("/api/users", async (req, res) => {
     try {
         let users = [];
         if (db) {
-            const snapshot = await db.collection("users").get();
+            const snapshot = await db.collection("users").where('email', '==', email.toLowerCase()).limit(1).get();
             users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
             users = (await readData("users.json")) || [];
