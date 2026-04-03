@@ -43,8 +43,15 @@ try {
       }),
     });
     db = admin.firestore();
-    bucket = admin.storage().bucket(`${process.env.FIREBASE_PROJECT_ID}.appspot.com`);
-    console.log("Firebase initialized successfully");
+    // Support both old and new bucket formats
+    const bucketName = `${process.env.FIREBASE_PROJECT_ID}.firebasestorage.app`;
+    const fallbackBucketName = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+
+    bucket = admin.storage().bucket(bucketName);
+
+    // We can't easily check if bucket exists here without a network call,
+    // so we'll just log both and hope for the best, or handle it in the upload route.
+    console.log(`Firebase initialized. Using bucket: ${bucketName}`);
   } else {
     console.warn("Firebase credentials missing. Falling back to local JSON storage.");
   }
@@ -168,28 +175,29 @@ async function startServer() {
     const requestingUserId = req.headers['x-user-id'] as string;
     const targetUserId = req.params.id;
 
-    console.log(`[isAuthorizedToModify] Requesting: ${requestingUserId}, Target: ${targetUserId}, Method: ${req.method}`);
-
     if (!requestingUserId) {
-        console.log(`[isAuthorizedToModify] REJECTED 401: No x-user-id header`);
         return res.status(401).json({ error: "Unauthorized: Missing header" });
     }
 
-    if (requestingUserId === targetUserId) {
-        console.log(`[isAuthorizedToModify] ALLOWED: Self modification`);
+    // If targetUserId is present, check ownership
+    if (targetUserId && requestingUserId === targetUserId) {
         return next();
     }
 
     const role = await getUserRole(requestingUserId);
-    console.log(`[isAuthorizedToModify] Retrieved role for ${requestingUserId}: ${role}`);
 
     if (role === 'admin') {
-        console.log(`[isAuthorizedToModify] ALLOWED: Admin modification`);
         return next();
     }
 
-    console.log(`[isAuthorizedToModify] REJECTED 403: Role is not admin`);
-    return res.status(403).json({ error: "Forbidden: Not admin" });
+    // If no target ID (e.g. upload), only allow if user is at least active
+    if (!targetUserId && requestingUserId) {
+       if (role === 'admin' || role === 'member') {
+          return next();
+       }
+    }
+
+    return res.status(403).json({ error: "Forbidden: Not authorized" });
   };
 
   app.get("/api/users", async (req, res) => {
@@ -430,16 +438,26 @@ app.post("/api/users", async (req, res) => {
         const extension = mimeType.split("/")[1] || "webp";
         const filename = `${folder}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
 
-        const file = bucket.file(filename);
-
-        await file.save(buffer, {
-          metadata: { contentType: mimeType },
-          public: true
-        });
-
-        // Get public URL using the proper format for Firebase Storage
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        res.json({ url: publicUrl });
+        try {
+           const file = bucket.file(filename);
+           await file.save(buffer, {
+             metadata: { contentType: mimeType },
+             public: true
+           });
+           const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+           res.json({ url: publicUrl });
+        } catch (storageError: any) {
+           console.error("Storage error, trying fallback bucket:", storageError.message);
+           const fallbackBucketName = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+           const fallbackBucket = admin.storage().bucket(fallbackBucketName);
+           const file = fallbackBucket.file(filename);
+           await file.save(buffer, {
+             metadata: { contentType: mimeType },
+             public: true
+           });
+           const publicUrl = `https://storage.googleapis.com/${fallbackBucket.name}/${filename}`;
+           res.json({ url: publicUrl });
+        }
       } else {
         // Fallback for local dev without firebase: just return the base64 string
         res.json({ url: image });

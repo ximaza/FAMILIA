@@ -88,7 +88,9 @@ export const Notices: React.FC = () => {
     setImageUrl('');
     setEventDate('');
     setShowForm(false);
-  };  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -98,7 +100,7 @@ export const Notices: React.FC = () => {
         setImageUrl(publicUrl);
       } catch (error) {
         console.error("Error compressing/uploading image", error);
-        alert("Hubo un error al subir la imagen. Intenta con otra.");
+        alert("Error al subir imagen: " + (error instanceof Error ? error.message : String(error)));
       } finally {
         setIsDrafting(false);
       }
