@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { storage } from '../services/storage';
 import { Edit2, Save, X, Image as ImageIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { HomePageContent, HomeSection } from '../types';
+import { compressImage, uploadImage } from '../utils/image';
 import { useTableOfContents } from '../hooks/useTableOfContents';
 import { TableOfContents } from '../components/TableOfContents';
 
@@ -70,24 +71,26 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, sectionId: string) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 800 * 1024) {
-          alert("La imagen es demasiado grande. Máximo 800KB.");
-          return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      setIsSaving(true);
+      try {
+        const compressedImage = await compressImage(file);
+        const publicUrl = await uploadImage(compressedImage, "homepage");
         if (!editForm) return;
         setEditForm({
           ...editForm,
           sections: editForm.sections?.map(sec =>
-            sec.id === sectionId ? { ...sec, imageUrl: reader.result as string } : sec
+            sec.id === sectionId ? { ...sec, imageUrl: publicUrl } : sec
           )
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error compressing/uploading image", error);
+        alert("Hubo un error al subir la imagen. Intenta con otra.");
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
