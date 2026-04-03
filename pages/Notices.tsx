@@ -100,7 +100,7 @@ export const Notices: React.FC = () => {
         setImageUrl(publicUrl);
       } catch (error) {
         console.error("Error compressing/uploading image", error);
-        alert("Error al subir imagen: " + (error instanceof Error ? error.message : String(error)));
+        const errorMsg = error instanceof Error ? error.message : String(error); try { const parsed = JSON.parse(errorMsg); alert("Error al subir imagen: " + (parsed.message || parsed.error || errorMsg)); } catch(e) { alert("Error al subir imagen: " + errorMsg); }
       } finally {
         setIsDrafting(false);
       }
