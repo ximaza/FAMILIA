@@ -220,13 +220,13 @@ export const FamilyHistory: React.FC = () => {
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                <h4 className="font-bold text-slate-700 text-lg">Secciones Dinámicas</h4>
                <div className="flex gap-2">
-                 <button onClick={() => addSection('texto')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-100 transition shadow-sm">
+                 <button onClick={() => addSection('texto')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-white transition shadow-sm">
                     <PlusCircle size={14} /> Texto
                  </button>
-                 <button onClick={() => addSection('imagen')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-family-100 transition shadow-sm">
+                 <button onClick={() => addSection('imagen')} className="flex items-center gap-1 text-sm bg-family-50 border border-family-200 text-family-700 px-3 py-1.5 rounded-lg hover:bg-white transition shadow-sm">
                     <ImageIcon size={14} /> Imagen
                  </button>
-                 <button onClick={() => addSection('legacy')} className="flex items-center gap-1 text-sm bg-family-100 border border-family-300 text-family-800 px-3 py-1.5 rounded-lg hover:bg-family-200 transition shadow-sm" title="Bloque antiguo (Título + Texto + Imagen lateral)">
+                 <button onClick={() => addSection('legacy')} className="flex items-center gap-1 text-sm bg-white border border-family-300 text-family-800 px-3 py-1.5 rounded-lg hover:bg-family-200 transition shadow-sm" title="Bloque antiguo (Título + Texto + Imagen lateral)">
                     <PlusCircle size={14} /> Bloque Clásico
                  </button>
                </div>
@@ -267,9 +267,9 @@ export const FamilyHistory: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 mb-1">Imagen</label>
                             <div className="mt-2 flex items-center gap-4">
                                 {section.src && (
-                                <img src={section.src} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                                <img src={section.src} alt="Preview" className="w-32 h-20 object-contain rounded-lg border border-slate-200" />
                                 )}
-                                <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-family-400 hover:bg-family-100 transition bg-white">
+                                <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-family-400 hover:bg-white transition bg-white">
                                 <ImageIcon className="text-slate-400" size={24} />
                                 <span className="text-[10px] text-slate-500 mt-1">Subir Imagen</span>
                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, section.id)} />
@@ -335,7 +335,7 @@ export const FamilyHistory: React.FC = () => {
                       <label className="block text-xs font-bold text-slate-500 mb-1">Imagen (Opcional)</label>
                       <div className="mt-2 flex items-center gap-4">
                         {section.imageUrl && (
-                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-contain rounded-lg border border-slate-200" />
                         )}
                         <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-family-400 hover:bg-family-50 transition">
                           <ImageIcon className="text-slate-400" size={24} />
@@ -390,10 +390,10 @@ export const FamilyHistory: React.FC = () => {
                                     {section.imageUrl && (
                                         <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
                                             <div
-                                              className="rounded-2xl overflow-hidden shadow-xl border-4 border-white cursor-zoom-in group relative bg-slate-100 aspect-video flex items-center justify-center"
+                                              className="rounded-2xl overflow-hidden shadow-xl border-4 border-white cursor-zoom-in group relative bg-white aspect-video flex items-center justify-center"
                                               onClick={() => setActiveImage({ src: section.imageUrl as string, caption: section.title })}
                                             >
-                                                <img src={section.imageUrl} alt={section.title || "Historia Familiar"} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img src={section.imageUrl} alt={section.title || "Historia Familiar"} loading="lazy" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <ZoomIn className="text-white drop-shadow-md" size={32} />
                                                 </div>
@@ -432,12 +432,12 @@ export const FamilyHistory: React.FC = () => {
                                 `}
                                 onClick={() => setActiveImage({ src: section.src as string, caption: section.caption })}
                             >
-                                <div className="relative aspect-video flex items-center justify-center bg-slate-100">
+                                <div className="relative aspect-video flex items-center justify-center bg-white">
                                     <img
                                         src={section.src}
                                         alt={section.caption || "Imagen de la historia"}
                                         loading="lazy"
-                                        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105`}
+                                        className={`w-full h-full object-contain transition-transform duration-500 group-hover:scale-105`}
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
                                         <ZoomIn className="text-white drop-shadow-md" size={32} />

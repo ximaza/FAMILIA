@@ -266,7 +266,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
                             <label className="block text-xs font-bold text-slate-500 mb-1">Imagen</label>
                             <div className="mt-2 flex items-center gap-4">
                                 {section.src && (
-                                <img src={section.src} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                                <img src={section.src} alt="Preview" className="w-32 h-20 object-contain rounded-lg border border-slate-200" />
                                 )}
                                 <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-turquoise-400 hover:bg-turquoise-50 transition bg-white">
                                 <ImageIcon className="text-slate-400" size={24} />
@@ -333,7 +333,7 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
                       <label className="block text-xs font-bold text-slate-500 mb-1">Imagen (Opcional)</label>
                       <div className="mt-2 flex items-center gap-4">
                         {section.imageUrl && (
-                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-cover rounded-lg border border-slate-200" />
+                          <img src={section.imageUrl} alt="Preview" className="w-32 h-20 object-contain rounded-lg border border-slate-200" />
                         )}
                         <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-turquoise-400 hover:bg-turquoise-50 transition">
                           <ImageIcon className="text-slate-400" size={24} />
@@ -397,10 +397,10 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
                                 {section.imageUrl && (
                                     <div className={`w-full ${section.content ? 'md:w-1/2' : ''}`}>
                                         <div
-                                          className="rounded-2xl overflow-hidden shadow-xl border-4 border-white cursor-zoom-in group relative bg-slate-100 aspect-video flex items-center justify-center"
+                                          className="rounded-2xl overflow-hidden shadow-xl border-4 border-white cursor-zoom-in group relative bg-white aspect-video flex items-center justify-center"
                                           onClick={() => setActiveImage({ src: section.imageUrl as string, caption: section.title })}
                                         >
-                                            <img src={section.imageUrl} alt={section.title || "Familia Mazarrasa"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <img src={section.imageUrl} alt={section.title || "Familia Mazarrasa"} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
                                                 <ZoomIn className="text-white drop-shadow-md" size={32} />
                                             </div>
@@ -439,12 +439,12 @@ export const Dashboard: React.FC<{ onNavigate: (page: string) => void }> = ({ on
                             `}
                             onClick={() => setActiveImage({ src: section.src as string, caption: section.caption })}
                         >
-                            <div className="relative aspect-video flex items-center justify-center bg-slate-100">
+                            <div className="relative aspect-video flex items-center justify-center bg-white">
                                 <img
                                     src={section.src}
                                     alt={section.caption || "Imagen del inicio"}
                                     loading="lazy"
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
                                     <ZoomIn className="text-white drop-shadow-md" size={32} />
