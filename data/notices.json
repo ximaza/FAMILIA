@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "1775345857189",
+    "authorId": "admin-1",
+    "authorName": "Joaquín Mazarrasa",
+    "title": "Updated Title",
+    "content": "Testing if deletion works with new headers.",
+    "type": "general",
+    "imageUrl": "",
+    "date": "2026-04-04T23:37:37.189Z"
+  }
+]
