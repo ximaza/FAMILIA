@@ -47,7 +47,9 @@ export const storage = {
   },
 
   getNotices: async (): Promise<Notice[]> => {
-    const res = await fetch('/api/notices');
+    const res = await fetch('/api/notices', {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -55,7 +57,7 @@ export const storage = {
   addNotice: async (notice: Notice): Promise<Notice> => {
     const res = await fetch('/api/notices', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(notice)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -65,7 +67,7 @@ export const storage = {
   updateNotice: async (id: string, updates: Partial<Notice>): Promise<Notice> => {
     const res = await fetch(`/api/notices/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updates)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -74,14 +76,17 @@ export const storage = {
 
   deleteNotice: async (id: string): Promise<void> => {
     const res = await fetch(`/api/notices/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(await res.text());
   },
 
 
   getHistory: async (): Promise<FamilyHistory> => {
-    const res = await fetch('/api/history');
+    const res = await fetch('/api/history', {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -89,7 +94,7 @@ export const storage = {
   saveHistory: async (history: FamilyHistory): Promise<FamilyHistory> => {
     const res = await fetch('/api/history', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(history)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -97,7 +102,9 @@ export const storage = {
   },
 
   getHomePage: async (): Promise<HomePageContent> => {
-    const res = await fetch('/api/homepage');
+    const res = await fetch('/api/homepage', {
+      headers: getAuthHeaders()
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -105,7 +112,7 @@ export const storage = {
   saveHomePage: async (content: HomePageContent): Promise<HomePageContent> => {
     const res = await fetch('/api/homepage', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(content)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -119,7 +126,6 @@ export const storage = {
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) throw new Error(await res.text());
-    if (res.ok) return res.json();
-    return undefined;
+    return res.json();
   }
 };
