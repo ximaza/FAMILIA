@@ -1,0 +1,16 @@
+<<<<<<< SEARCH
+      } else {
+        const notices = (await readData("notices.json")) || [];
+        notices.push(notice);
+        await writeData("notices.json", notices);
+        res.json(notice);
+      }
+=======
+      } else {
+        const notices = (await readData("notices.json")) || [];
+        const notice = { id: Date.now().toString(), ...noticeData };
+        notices.push(notice);
+        await writeData("notices.json", notices);
+        res.json(notice);
+      }
+>>>>>>> REPLACE

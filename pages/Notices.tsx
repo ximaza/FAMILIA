@@ -23,8 +23,17 @@ export const Notices: React.FC = () => {
   const [eventDate, setEventDate] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
 
+  const fetchNotices = async () => {
+    try {
+      const data = await storage.getNotices();
+      setNotices(data);
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+    }
+  };
+
   useEffect(() => {
-    storage.getNotices().then(setNotices);
+    fetchNotices();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,8 +53,7 @@ export const Notices: React.FC = () => {
         if (type !== 'event') {
             updates.eventDate = undefined;
         }
-        const updated = await storage.updateNotice(editingId, updates);
-        setNotices(prev => prev.map(n => n.id === editingId ? { ...n, ...updated } : n));
+        await storage.updateNotice(editingId, updates);
       } else {
         const newNotice: Notice = {
           id: Date.now().toString(), // Local fallback, server might overwrite
@@ -58,10 +66,11 @@ export const Notices: React.FC = () => {
           date: new Date().toISOString(),
           ...(type === 'event' && eventDate ? { eventDate } : {})
         };
-        const saved = await storage.addNotice(newNotice);
-        setNotices(prev => [saved, ...prev]);
+        await storage.addNotice(newNotice);
       }
       resetForm();
+      // Re-fetch to ensure sync with database
+      await fetchNotices();
     } catch (error) {
       console.error("Error saving notice:", error);
       alert("Error al guardar la comunicación. Por favor, inténtelo de nuevo.");
@@ -83,7 +92,8 @@ export const Notices: React.FC = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta comunicación?')) {
       try {
         await storage.deleteNotice(id);
-        setNotices(prev => prev.filter(n => n.id !== id));
+        // Re-fetch to ensure sync with database
+        await fetchNotices();
       } catch (error) {
         console.error("Error deleting notice:", error);
         alert("Error al eliminar la comunicación. Asegúrate de tener permisos suficientes.");

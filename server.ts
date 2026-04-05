@@ -265,8 +265,10 @@ async function startServer() {
 
   app.get("/api/notices", async (req, res) => {
     try {
+      console.log("Fetching all notices...");
       if (db) {
         const snapshot = await db.collection("notices").orderBy("date", "desc").get();
+        console.log(`Retrieved ${snapshot.size} notices from Firestore.`);
         res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } else {
         const notices = (await readData("notices.json")) || [];
@@ -280,18 +282,21 @@ async function startServer() {
 
   app.post("/api/notices", async (req, res) => {
     try {
-      const notice = req.body;
+      const { id: _, ...noticeData } = req.body; // Ignore client-side ID
       const requestingUserId = req.headers['x-user-id'] as string;
 
       // Enforce security: use the authenticated user ID as author
       if (requestingUserId) {
-          notice.authorId = requestingUserId;
+          noticeData.authorId = requestingUserId;
       }
 
       if (db) {
-        const docRef = await db.collection("notices").add(notice);
-        res.json({ id: docRef.id, ...notice });
+        console.log("Adding new notice to Firestore:", noticeData.title);
+        const docRef = await db.collection("notices").add(noticeData);
+        console.log("Successfully added notice with ID:", docRef.id);
+        res.json({ id: docRef.id, ...noticeData });
       } else {
+        const notice = { id: Date.now().toString(), ...noticeData };
         const notices = (await readData("notices.json")) || [];
         notices.push(notice);
         await writeData("notices.json", notices);
@@ -334,10 +339,12 @@ async function startServer() {
   app.put("/api/notices/:id", isAuthorizedForNotice, async (req, res) => {
     try {
       const { id } = req.params;
-      const updatedNotice = req.body;
+      const { id: _, ...updatedNotice } = req.body; // Remove ID from body just in case
       if (db) {
+        console.log(`Updating notice ID: ${id}`);
         await db.collection("notices").doc(id).update(updatedNotice);
-        res.json(updatedNotice);
+        console.log(`Successfully updated notice ID: ${id}`);
+        res.json({ id, ...updatedNotice });
       } else {
         const notices = (await readData("notices.json")) || [];
         const index = notices.findIndex((n: any) => n.id === id);
@@ -359,7 +366,9 @@ async function startServer() {
     try {
       const { id } = req.params;
       if (db) {
+        console.log(`Attempting to delete notice ID: ${id} from Firestore`);
         await db.collection("notices").doc(id).delete();
+        console.log(`Successfully deleted notice ID: ${id}`);
         res.json({ success: true });
       } else {
         const notices = (await readData("notices.json")) || [];
