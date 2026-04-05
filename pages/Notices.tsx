@@ -31,37 +31,41 @@ export const Notices: React.FC = () => {
     e.preventDefault();
     if (!currentUser) return;
 
-    if (editingId) {
-      const updates: Partial<Notice> = {
-        title,
-        content,
-        type,
-        imageUrl: imageUrl,
-        ...(type === 'event' && eventDate ? { eventDate } : {})
-      };
-      // If it's not an event, explicitly remove eventDate
-      if (type !== 'event') {
-          updates.eventDate = undefined;
+    try {
+      if (editingId) {
+        const updates: Partial<Notice> = {
+          title,
+          content,
+          type,
+          imageUrl: imageUrl,
+          ...(type === 'event' && eventDate ? { eventDate } : {})
+        };
+        // If it's not an event, explicitly remove eventDate
+        if (type !== 'event') {
+            updates.eventDate = undefined;
+        }
+        const updated = await storage.updateNotice(editingId, updates);
+        setNotices(prev => prev.map(n => n.id === editingId ? { ...n, ...updated } : n));
+      } else {
+        const newNotice: Notice = {
+          id: Date.now().toString(), // Local fallback, server might overwrite
+          authorId: currentUser.id,
+          authorName: `${currentUser.firstName} ${currentUser.surnames[0]}`,
+          title,
+          content,
+          type,
+          imageUrl: imageUrl,
+          date: new Date().toISOString(),
+          ...(type === 'event' && eventDate ? { eventDate } : {})
+        };
+        const saved = await storage.addNotice(newNotice);
+        setNotices(prev => [saved, ...prev]);
       }
-      await storage.updateNotice(editingId, updates);
-    } else {
-      const newNotice: Notice = {
-        id: Date.now().toString(),
-        authorId: currentUser.id,
-        authorName: `${currentUser.firstName} ${currentUser.surnames[0]}`,
-        title,
-        content,
-        type,
-        imageUrl: imageUrl,
-        date: new Date().toISOString(),
-        ...(type === 'event' && eventDate ? { eventDate } : {})
-      };
-      await storage.addNotice(newNotice);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving notice:", error);
+      alert("Error al guardar la comunicación. Por favor, inténtelo de nuevo.");
     }
-
-    const updatedNotices = await storage.getNotices();
-    setNotices(updatedNotices);
-    resetForm();
   };
 
   const handleEdit = (notice: Notice) => {
@@ -77,9 +81,13 @@ export const Notices: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta comunicación?')) {
-      await storage.deleteNotice(id);
-      const updatedNotices = await storage.getNotices();
-      setNotices(updatedNotices);
+      try {
+        await storage.deleteNotice(id);
+        setNotices(prev => prev.filter(n => n.id !== id));
+      } catch (error) {
+        console.error("Error deleting notice:", error);
+        alert("Error al eliminar la comunicación. Asegúrate de tener permisos suficientes.");
+      }
     }
   };
 
@@ -258,7 +266,7 @@ export const Notices: React.FC = () => {
                     type="submit" 
                     className="bg-family-600 text-white px-6 py-2 rounded-lg hover:bg-family-700 transition"
                 >
-                    Publicar
+                    {editingId ? 'Guardar Cambios' : 'Publicar'}
                 </button>
             </div>
           </form>

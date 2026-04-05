@@ -311,7 +311,7 @@ async function startServer() {
     if (!requestingUserId) return res.status(401).json({ error: "Unauthorized" });
 
     const role = await getUserRole(requestingUserId);
-    if (role === 'admin') return next();
+    if (role === 'admin' || role === 'publicador') return next();
 
     try {
         let notice: any = null;
